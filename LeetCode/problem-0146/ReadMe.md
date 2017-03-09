@@ -1,10 +1,13 @@
 
-LeetCode
------------
+## LeetCode
+
+[https://LeetCode.com](https://LeetCode.com)
+
+## Problem - 0146
 
 `Question` 146. **LRU Cache**
 
-# Description
+## Description
 
 URL: [https://leetcode.com/problems/lru-cache/](https://leetcode.com/problems/lru-cache/)
 
@@ -13,7 +16,7 @@ Design and implement a data structure for Least Recently Used (LRU) cache. It sh
 `get(key)` - Get the value (will always be positive) of the key if the key exists in the cache, otherwise return -1.
 `set(key, value)` - Set or insert the value if the key is not already present. When the cache reached its capacity, it should invalidate the least recently used item before inserting a new item.
 
-# Subscribe
+## Subscribe
 
 [Subscribe](https://leetcode.com/subscribe/) to see which companies asked this question.
 
@@ -23,7 +26,7 @@ Design and implement a data structure for Least Recently Used (LRU) cache. It sh
 
 (The deadline is 2016/08/15)
 
-# Example:
+## Example:
 
 ```cpp
     LRUCache cache = new LRUCache( 2 /* capacity */ );
@@ -39,7 +42,7 @@ Design and implement a data structure for Least Recently Used (LRU) cache. It sh
     cache.get(4);       // returns 4
 ```
 
-# C++:
+## C++:
 
 ```cpp
     class LRUCache{

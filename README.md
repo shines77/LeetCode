@@ -1,2 +1,3 @@
 # LeetCode
-Some algorithm problems about LeetCode.com or ACM.
+
+Some algorithm problems about LeetCode.com and ACM.
