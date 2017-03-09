@@ -3,6 +3,10 @@
 
 [https://LeetCode.com](https://LeetCode.com)
 
+## Algorithm problems
+
+[https://leetcode.com/problemset/algorithms/](https://leetcode.com/problemset/algorithms/)
+
 # Problems
 
 ## Problem - 0082
