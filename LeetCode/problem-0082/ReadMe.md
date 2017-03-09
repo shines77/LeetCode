@@ -1,11 +1,15 @@
-LeetCode
------------
+
+## LeetCode
+
+[https://LeetCode.com](https://LeetCode.com)
+
+## Problem - 0082
 
 `Question` 82. **Remove Duplicates from Sorted List II**
 
-# Description
-
 URL: [https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/](https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/)
+
+## Description
 
 Given a sorted linked list, delete all nodes that have duplicate numbers, leaving only distinct numbers from the original list.
 
@@ -15,11 +19,11 @@ Given `1->2->3->3->4->4->5`, return `1->2->5`.
 
 Given `1->1->1->2->3`, return `2->3`.
 
-# Tags
+## Tags
 
 Tags: `Linked List`
 
-# Subscribe
+## Subscribe
 
 [Subscribe](https://leetcode.com/subscribe/) to see which companies asked this question.
 
@@ -29,7 +33,7 @@ Tags: `Linked List`
 
 (The deadline is 2016/08/15)
 
-# Example:
+## Example:
 
 C++:
 
