@@ -13,38 +13,38 @@
  * };
  */
 struct ListNode* deleteDuplicates(struct ListNode* head) {
-        // If list is empty or only have one node, return head directly.
-        if (head == NULL || head->next == NULL)
-            return head;
+    // If list is empty or only have one node, return head directly.
+    if (head == NULL || head->next == NULL)
+        return head;
 
-        struct ListNode dummy;
-        dummy.next = head;
+    struct ListNode dummy;
+    dummy.next = head;
 
-        struct ListNode * last, * comp;
-        struct ListNode * iter;
+    struct ListNode * last, * comp;
+    struct ListNode * iter;
 
-        last = &dummy;
-        comp = head;
-        iter = head;
+    last = &dummy;
+    comp = head;
+    iter = head;
 
-        while (iter) {
-            struct ListNode * first = iter;
+    while (iter) {
+        struct ListNode * first = iter;
+        iter = iter->next;
+        while (iter && comp->val == iter->val) {
+            //ListNode * temp = iter;
             iter = iter->next;
-            while (iter && comp->val == iter->val) {
-                //ListNode * temp = iter;
-                iter = iter->next;
-                //delete temp;
-            }
-            if (iter == comp->next) {
-                last = comp;
-                comp = iter;
-                continue;
-            }
-            else {
-                //delete first;
-            }
-            comp       = iter;
-            last->next = iter;
+            //delete temp;
         }
-        return dummy.next;
+        if (iter == comp->next) {
+            last = comp;
+            comp = iter;
+            continue;
+        }
+        else {
+            //delete first;
+        }
+        comp       = iter;
+        last->next = iter;
+    }
+    return dummy.next;
 }
