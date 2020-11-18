@@ -9,7 +9,8 @@
 #include <map>
 #include <algorithm>
 
-#include "stop_watch.h"
+#include "CPUWarmUp.h"
+#include "StopWatch.h"
 
 using namespace std;
 
@@ -199,6 +200,7 @@ public:
         stateMap.create(col, row);
         
         maxWordLen = 0;
+        wordsMap.clear();
         for (auto it = words.cbegin(); it != words.cend(); ++it) {
             const string & word = *it;
             wordsMap.emplace(word, false);
@@ -210,6 +212,7 @@ public:
         wordsList = words;
         sort(wordsList.begin(), wordsList.end(), string_cmp_desc);
         
+        resultList.clear();
         int count = startSearch(charBoard, stateMap);
         return resultList;
     }
@@ -351,48 +354,81 @@ public:
 void test_solution()
 {
     Solution solution;
-#if 1
-    vector<char> row1 = { 'd', 'o', 'a', 'f' };
-    vector<char> row2 = { 'a', 'g', 'a', 'i' };
-    vector<char> row3 = { 'd', 'c', 'a', 'n' };
-    vector<vector<char>> board;
-    board.push_back(row1);
-    board.push_back(row2);
-    board.push_back(row3);
-    vector<string> words = { "dog", "dad", "dgdg", "can", "again" };
-#else
-    vector<char> row1 = { 'a', 'b', 'c', 'e' };
-    vector<char> row2 = { 's', 'f', 'c', 's' };
-    vector<char> row3 = { 'a', 'd', 'e', 'e' };
-    vector<vector<char>> board;
-    board.push_back(row1);
-    board.push_back(row2);
-    board.push_back(row3);
-    vector<string> words = { "see", "se" };
-#endif
+    vector<vector<string>> answers;
 
-    jimi::StopWatch sw;
+    jtest::StopWatch sw;
     sw.start();
-    vector<string> result = solution.wordSearchII(board, words);
+
+    // Test case 1
+    {
+        vector<char> row1 = { 'd', 'o', 'a', 'f' };
+        vector<char> row2 = { 'a', 'g', 'a', 'i' };
+        vector<char> row3 = { 'd', 'c', 'a', 'n' };
+        vector<vector<char>> board;
+        board.push_back(row1);
+        board.push_back(row2);
+        board.push_back(row3);
+        vector<string> words = { "dog", "dad", "dgdg", "can", "again" };
+
+        vector<string> result = solution.wordSearchII(board, words);
+        answers.push_back(result);
+    }
+
+    // Test case 2
+    {
+        vector<char> row1 = { 'a', 'b', 'c', 'e' };
+        vector<char> row2 = { 's', 'f', 'c', 's' };
+        vector<char> row3 = { 'a', 'd', 'e', 'e' };
+        vector<vector<char>> board;
+        board.push_back(row1);
+        board.push_back(row2);
+        board.push_back(row3);
+        vector<string> words = { "see", "se" };
+
+        vector<string> result = solution.wordSearchII(board, words);
+        answers.push_back(result);
+    }
+
+    // Test case 3
+    {
+        vector<char> row1 = { 'o','a','a','n' };
+        vector<char> row2 = { 'e','t','a','e' };
+        vector<char> row3 = { 'i','h','k','r' };
+        vector<char> row4 = { 'i','f','l','v' };
+        vector<vector<char>> board;
+        board.push_back(row1);
+        board.push_back(row2);
+        board.push_back(row3);
+        board.push_back(row4);
+        vector<string> words = { "oath","pea","eat","rain" };
+
+        vector<string> result = solution.wordSearchII(board, words);
+        answers.push_back(result);
+    }
+
     sw.stop();
 
-    printf("Result = \n\n");
+    // Display all ansewers
+    for (size_t index = 0; index < answers.size(); index++) {
+        printf("Result #%d = \n\n", int(index));
 
-    printf("[ ");
-    for (size_t i = 0; i < result.size(); i++) {
-        if (i < result.size() - 1)
-            printf("\"%s\", ", result[i].c_str());
-        else
-            printf("\"%s\"", result[i].c_str());
+        printf("[ ");
+        for (size_t i = 0; i < answers[index].size(); i++) {
+            if (i < answers[index].size() - 1)
+                printf("\"%s\", ", answers[index][i].c_str());
+            else
+                printf("\"%s\"", answers[index][i].c_str());
+        }
+        printf(" ]\n");
+        printf("\n");
     }
-    printf(" ]\n");
-    printf("\n");
 
     printf(" Elapsed time: %8.3f ms\n\n", sw.getElapsedMillisec());
 }
 
-//int main(int argn, char * argv[])
-//{
-//    test_solution();
-//    return 0;
-//}
+int main(int argc, char * argv[])
+{
+    jtest::CPU::warmup(1000);
+    test_solution();
+    return 0;
+}
