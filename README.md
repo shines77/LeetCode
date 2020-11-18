@@ -41,7 +41,7 @@
 
 题目：[https://leetcode-cn.com/problems/word-search-ii/](https://leetcode.com/problems/word-search-ii/) | [英文站](https://leetcode.com/problems/word-search-ii/)
 
-源码：[\./problem-0146-Word-Search-II/](./problem-0146-Word-Search-II/)
+源码：[\./problem-0212-Word-Search-II/](./problem-0212-Word-Search-II/)
 
 标签：`哈希表`，`双向链表`
 
