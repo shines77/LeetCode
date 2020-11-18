@@ -19,9 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\LRUCache_v1.h" />
     <ClInclude Include="src\LRUCache_v2.h" />
     <ClInclude Include="src\LRUHashTable.h" />
@@ -29,6 +26,9 @@
     <ClInclude Include="src\LinkedList.h" />
     <ClInclude Include="src\LRUCache.h" />
     <ClInclude Include="src\LRUNode.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Solution.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AFFFEFBB-C2EE-4344-BDF0-15F6A8B23F61}</ProjectGuid>

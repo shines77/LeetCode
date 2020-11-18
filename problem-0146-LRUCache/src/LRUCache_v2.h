@@ -34,18 +34,13 @@ struct DoubleLinkedList {
 
 class LRUCache {
 private:
-	// 表头
 	DoubleLinkedList * head_;
-	// 表尾
 	DoubleLinkedList * tail_;
-	// 容量
 	int capacity_;
-	// 缓存，记录key所对应的链表节点
 	std::unordered_map<int, DoubleLinkedList *> cache_;
 
 public:
 	LRUCache(int capacity) : head_(nullptr), tail_(nullptr), capacity_(0), cache_(capacity) {
-		// 初始化
 		capacity_ = capacity;
 		head_ = new DoubleLinkedList(-1, -1);
 		tail_ = new DoubleLinkedList(-1, -1);
@@ -69,7 +64,6 @@ public:
         }
     }
 
-	// 表尾插入结点
 	void pushNode(DoubleLinkedList * node) {
 		node->prev = tail_->prev;
 		tail_->prev->next = node;
@@ -77,9 +71,7 @@ public:
 		tail_->prev = node;
 	}
 
-	// 从链表中移除节点
 	void removeNode(DoubleLinkedList * node) {
-		// 将该节点从链表中移除
         assert(node->prev != nullptr);
 		node->prev->next = node->next;
         assert(node->next != nullptr);

@@ -11,11 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\LRUCache.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -37,5 +32,10 @@
     <ClInclude Include="src\LRUCache_v2.h">
       <Filter>src</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Solution.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -55,48 +55,6 @@ std::vector<int> s_testData[MAX_TEST_DATA];
 /*                                                                       */
 /*************************************************************************/
 
-void LeetCode_LRUCache_UintTest()
-{
-    printf("\n");
-    printf("LRUCacheTest()\n\n");
-
-    LeetCode::LRUCache lruCache(2);
-
-    lruCache.put(1, 1);
-    lruCache.put(2, 2);
-    lruCache.get(1);       // returns 1
-    lruCache.put(3, 3);    // evicts key 2
-    lruCache.get(2);       // returns -1 (not found)
-    lruCache.put(4, 4);    // evicts key 1
-    lruCache.get(1);       // returns -1 (not found)
-    lruCache.get(3);       // returns 3
-    lruCache.get(4);       // returns 4
-    lruCache.put(2, 12);   // evicts key 3
-
-    lruCache.display();
-    printf("\n");
-}
-
-void LeetCode_Online_LRUCache_UintTest()
-{
-    printf("LeetCode Online LRUCacheTest()\n\n");
-
-    LRUCache lruCache(2);
-
-    lruCache.put(1, 1);
-    lruCache.put(2, 2);
-    lruCache.get(1);       // returns 1
-    lruCache.put(3, 3);    // evicts key 2
-    lruCache.get(2);       // returns -1 (not found)
-    lruCache.put(4, 4);    // evicts key 1
-    lruCache.get(1);       // returns -1 (not found)
-    lruCache.get(3);       // returns 3
-    lruCache.get(4);       // returns 4
-    lruCache.put(2, 12);   // evicts key 3
-
-    printf("size = %u, capacity = %u\n\n", (uint32_t)lruCache.sizes(), (uint32_t)lruCache.capacity());
-}
-
 void cpu_warmup(int delayMillsecs)
 {
 #if defined(NDEBUG)
@@ -169,6 +127,48 @@ int randomInt32(int mininum, int maxinum)
 int randomInt32(int maxinum)
 {
     return randomInt32(0, maxinum);
+}
+
+void LeetCode_LRUCache_UintTest()
+{
+    printf("\n");
+    printf("LRUCacheTest()\n\n");
+
+    LeetCode::LRUCache lruCache(2);
+
+    lruCache.put(1, 1);
+    lruCache.put(2, 2);
+    lruCache.get(1);       // returns 1
+    lruCache.put(3, 3);    // evicts key 2
+    lruCache.get(2);       // returns -1 (not found)
+    lruCache.put(4, 4);    // evicts key 1
+    lruCache.get(1);       // returns -1 (not found)
+    lruCache.get(3);       // returns 3
+    lruCache.get(4);       // returns 4
+    lruCache.put(2, 12);   // evicts key 3
+
+    lruCache.display();
+    printf("\n");
+}
+
+void LeetCode_Online_LRUCache_UintTest()
+{
+    printf("LeetCode Online LRUCacheTest()\n\n");
+
+    LRUCache lruCache(2);
+
+    lruCache.put(1, 1);
+    lruCache.put(2, 2);
+    lruCache.get(1);       // returns 1
+    lruCache.put(3, 3);    // evicts key 2
+    lruCache.get(2);       // returns -1 (not found)
+    lruCache.put(4, 4);    // evicts key 1
+    lruCache.get(1);       // returns -1 (not found)
+    lruCache.get(3);       // returns 3
+    lruCache.get(4);       // returns 4
+    lruCache.put(2, 12);   // evicts key 3
+
+    printf("size = %u, capacity = %u\n\n", (uint32_t)lruCache.sizes(), (uint32_t)lruCache.capacity());
 }
 
 void make_test_data()
@@ -610,8 +610,8 @@ int main(int argc, char * argv[])
     //::srand((uint32_t)::time(NULL));
     ::srand(seed);
 
-    LeetCode_LRUCache_UintTest();
-    LeetCode_Online_LRUCache_UintTest();
+    //LeetCode_Online_LRUCache_UintTest();
+    //LeetCode_LRUCache_UintTest();
 
     LeetCode_LRUCache_PrefTest();
 

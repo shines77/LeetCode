@@ -52,7 +52,7 @@ endif()
 include_directories(src)
 
 set(SOURCE_FILES
-    src/main.cpp
+    src/Solution.cpp
     )
 
 add_custom_target(release
