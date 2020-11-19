@@ -22,27 +22,33 @@
 
 #include "CPUWarmUp.h"
 
-// Level: [0 - 4]
-#define DIFFICULTY_LEVEL        2
+// Index: [0 - 4]
+#define TEST_CASE_INDEX         2
 
-static const char test_board[5][81] = {
+struct SudokuBoard {
+    char board[81];
+};
+
+static const SudokuBoard test_case[5] = {
     //
     // 0 #
     //
     // Normal (filled = 30)
     // https://leetcode-cn.com/problems/sudoku-solver/
     //
-    '5', '3', '.',  '.', '7', '.',  '.', '.', '.',
-    '6', '.', '.',  '1', '9', '5',  '.', '.', '.',
-    '.', '9', '8',  '.', '.', '.',  '.', '6', '.',
+    {
+        '5', '3', '.',  '.', '7', '.',  '.', '.', '.',
+        '6', '.', '.',  '1', '9', '5',  '.', '.', '.',
+        '.', '9', '8',  '.', '.', '.',  '.', '6', '.',
 
-    '8', '.', '.',  '.', '6', '.',  '.', '.', '3',
-    '4', '.', '.',  '8', '.', '3',  '.', '.', '1',
-    '7', '.', '.',  '.', '2', '.',  '.', '.', '6',
+        '8', '.', '.',  '.', '6', '.',  '.', '.', '3',
+        '4', '.', '.',  '8', '.', '3',  '.', '.', '1',
+        '7', '.', '.',  '.', '2', '.',  '.', '.', '6',
 
-    '.', '6', '.',  '.', '.', '.',  '2', '8', '.',
-    '.', '.', '.',  '4', '1', '9',  '.', '.', '5',
-    '.', '.', '.',  '.', '8', '.',  '.', '7', '9',
+        '.', '6', '.',  '.', '.', '.',  '2', '8', '.',
+        '.', '.', '.',  '4', '1', '9',  '.', '.', '5',
+        '.', '.', '.',  '.', '8', '.',  '.', '7', '9'
+    },
 
     //
     // 1 #
@@ -50,17 +56,19 @@ static const char test_board[5][81] = {
     // Advance (filled = 24)
     // https://www.sudoku-cn.com/
     //
-    '4', '.', '2',  '.', '.', '.',  '9', '.', '.',
-    '.', '.', '.',  '.', '6', '1',  '.', '.', '.',
-    '.', '1', '9',  '.', '.', '.',  '.', '.', '.',
+    {
+        '4', '.', '2',  '.', '.', '.',  '9', '.', '.',
+        '.', '.', '.',  '.', '6', '1',  '.', '.', '.',
+        '.', '1', '9',  '.', '.', '.',  '.', '.', '.',
 
-    '7', '.', '5',  '.', '.', '.',  '6', '.', '.',
-    '2', '.', '4',  '7', '.', '.',  '.', '.', '5',
-    '.', '.', '.',  '.', '9', '.',  '7', '.', '.',
+        '7', '.', '5',  '.', '.', '.',  '6', '.', '.',
+        '2', '.', '4',  '7', '.', '.',  '.', '.', '5',
+        '.', '.', '.',  '.', '9', '.',  '7', '.', '.',
 
-    '.', '8', '.',  '2', '.', '9',  '.', '1', '.',
-    '.', '.', '7',  '.', '.', '4',  '.', '.', '.',
-    '.', '.', '.',  '.', '.', '.',  '.', '5', '2',
+        '.', '8', '.',  '2', '.', '9',  '.', '1', '.',
+        '.', '.', '7',  '.', '.', '4',  '.', '.', '.',
+        '.', '.', '.',  '.', '.', '.',  '.', '5', '2'
+    },
 
     //
     // 2 #
@@ -68,17 +76,19 @@ static const char test_board[5][81] = {
     // Hard (filled = 21)
     // https://github.com/tropicalwzc/ice_sudoku.github.io/blob/master/sudoku_solver.c
     //
-    '5', '.', '.',  '.', '.', '.',  '3', '.', '.',
-    '.', '2', '.',  '1', '.', '.',  '.', '7', '.',
-    '.', '.', '8',  '.', '.', '.',  '.', '.', '9',
+    {
+        '5', '.', '.',  '.', '.', '.',  '3', '.', '.',
+        '.', '2', '.',  '1', '.', '.',  '.', '7', '.',
+        '.', '.', '8',  '.', '.', '.',  '.', '.', '9',
 
-    '.', '4', '.',  '.', '.', '7',  '.', '.', '.',
-    '.', '.', '.',  '8', '2', '1',  '.', '.', '.',
-    '.', '.', '.',  '6', '.', '.',  '.', '1', '.',
+        '.', '4', '.',  '.', '.', '7',  '.', '.', '.',
+        '.', '.', '.',  '8', '2', '1',  '.', '.', '.',
+        '.', '.', '.',  '6', '.', '.',  '.', '1', '.',
 
-    '3', '.', '.',  '.', '.', '.',  '8', '.', '.',
-    '.', '6', '.',  '.', '.', '4',  '.', '2', '.',
-    '.', '.', '9',  '.', '.', '.',  '.', '.', '5',
+        '3', '.', '.',  '.', '.', '.',  '8', '.', '.',
+        '.', '6', '.',  '.', '.', '4',  '.', '2', '.',
+        '.', '.', '9',  '.', '.', '.',  '.', '.', '5'
+    },
 
     // Ice suduku string: 500000300020100070008000009040007000000821000000600010300000800060004020009000005
 
@@ -88,17 +98,19 @@ static const char test_board[5][81] = {
     // Hardcore (filled = 17)
     // http://www.cn.sudokupuzzle.org/play.php
     //
-    '5', '.', '.',  '.', '.', '.',  '.', '.', '.',
-    '.', '1', '.',  '.', '.', '.',  '3', '2', '.',
-    '.', '.', '.',  '8', '4', '.',  '.', '.', '.',
+    {
+        '5', '.', '.',  '.', '.', '.',  '.', '.', '.',
+        '.', '1', '.',  '.', '.', '.',  '3', '2', '.',
+        '.', '.', '.',  '8', '4', '.',  '.', '.', '.',
 
-    '.', '.', '.',  '.', '.', '.',  '.', '.', '.',
-    '.', '.', '.',  '.', '.', '3',  '1', '.', '.',
-    '6', '.', '8',  '5', '.', '.',  '.', '.', '.',
+        '.', '.', '.',  '.', '.', '.',  '.', '.', '.',
+        '.', '.', '.',  '.', '.', '3',  '1', '.', '.',
+        '6', '.', '8',  '5', '.', '.',  '.', '.', '.',
 
-    '.', '.', '7',  '.', '.', '.',  '.', '6', '8',
-    '.', '3', '4',  '.', '.', '1',  '.', '.', '.',
-    '.', '.', '.',  '.', '.', '.',  '.', '.', '.',
+        '.', '.', '7',  '.', '.', '.',  '.', '6', '8',
+        '.', '3', '4',  '.', '.', '1',  '.', '.', '.',
+        '.', '.', '.',  '.', '.', '.',  '.', '.', '.'
+    },
 
     // Ice suduku string: 500000000010000320000840000000000000000003100608500000007000068034001000000000000
 
@@ -109,17 +121,19 @@ static const char test_board[5][81] = {
     // http://news.sohu.com/20130527/n377158555.shtml
     // https://baike.baidu.com/reference/13848819/1bf4HJzRCPCNz9Rypz3HpTtnhc2MpcRr5JMIp0032uiuKPQm4eOMuq2WZWxf77V-UBRjIkyDf9CVZDEjlDeHJBaazlstk30qaDtt
     //
-    '8', '.', '.',  '.', '.', '.',  '.', '.', '.',
-    '.', '.', '3',  '6', '.', '.',  '.', '.', '.',
-    '.', '7', '.',  '.', '9', '.',  '2', '.', '.',
+    {
+        '8', '.', '.',  '.', '.', '.',  '.', '.', '.',
+        '.', '.', '3',  '6', '.', '.',  '.', '.', '.',
+        '.', '7', '.',  '.', '9', '.',  '2', '.', '.',
 
-    '.', '5', '.',  '.', '.', '7',  '.', '.', '.',
-    '.', '.', '.',  '.', '4', '5',  '7', '.', '.',
-    '.', '.', '.',  '1', '.', '.',  '.', '3', '.',
+        '.', '5', '.',  '.', '.', '7',  '.', '.', '.',
+        '.', '.', '.',  '.', '4', '5',  '7', '.', '.',
+        '.', '.', '.',  '1', '.', '.',  '.', '3', '.',
 
-    '.', '.', '1',  '.', '.', '.',  '.', '6', '8',
-    '.', '.', '8',  '5', '.', '.',  '.', '1', '.',
-    '.', '9', '.',  '.', '.', '.',  '4', '.', '.',
+        '.', '.', '1',  '.', '.', '.',  '.', '6', '8',
+        '.', '.', '8',  '5', '.', '.',  '.', '1', '.',
+        '.', '9', '.',  '.', '.', '.',  '4', '.', '.'
+    }
 
     /*************************************************
 
@@ -148,13 +162,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v1::Solution - Dancing Links\n\n");
+        printf("SudokuSolver: v1::Solution - Dancing Links\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -166,13 +180,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v2::Solution - Depth first search\n\n");
+        printf("SudokuSolver: v2::Solution - dfs\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -184,13 +198,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v3::Solution - Depth first search\n\n");
+        printf("SudokuSolver: v3::Solution - dfs\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -202,13 +216,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v4::Solution - Depth first search\n\n");
+        printf("SudokuSolver: v4::Solution - dfs\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -221,13 +235,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v5::Solution - Depth first search\n\n");
+        printf("SudokuSolver: v5::Solution - dfs\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -239,13 +253,13 @@ int main(int argc, char * argv[])
     if (1)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: v6::Solution - Depth first search\n\n");
+        printf("SudokuSolver: v6::Solution - dfs\n\n");
 
         std::vector<std::vector<char>> board;
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             std::vector<char> line;
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                line.push_back(test_board[DIFFICULTY_LEVEL][row * 9 + col]);
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
             }
             board.push_back(line);
         }
@@ -257,13 +271,13 @@ int main(int argc, char * argv[])
     if (0)
     {
         printf("--------------------------------\n\n");
-        printf("Sudoku: ice suduku\n\n");
+        printf("SudokuSolver: ice suduku\n\n");
 
         int sudo_in[9][9];
         int sudo_answer[10][9][9];
         for (size_t row = 0; row < SudokuHelper::Rows; row++) {
             for (size_t col = 0; col < SudokuHelper::Cols; col++) {
-                char val = test_board[DIFFICULTY_LEVEL][row * 9 + col];
+                char val = test_case[TEST_CASE_INDEX].board[row * 9 + col];
                 if (val == '.')
                     sudo_in[row][col] = 0;
                 else
