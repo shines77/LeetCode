@@ -42,6 +42,9 @@ static const bool kSearchAllStages = false;
 #endif
 static const bool kAllowFindInvalidIndex = false;
 
+// End game empties threshold
+static const size_t kEndGameEmptiesThreshold = 42;
+
 // Print debug trace ?
 static const bool kEnableDebugTrace = false;
 
@@ -185,6 +188,9 @@ public:
     static const size_t Palaces = SudokuHelper::Palaces;
     static const size_t Numbers = SudokuHelper::Numbers;
 
+    static size_t recur_counter;
+    static size_t end_recur_counter;
+
     struct PosInfo {
         uint8_t row;
         uint8_t col;
@@ -310,6 +316,32 @@ public:
         }
     }
 
+    int getNextFillCell(SmallFixedDualList<PosInfo, 81> & valid_moves) {
+        assert(valid_moves.size() > 1);
+
+        int min_index = -1;
+
+        // Find the position that unique number or minimum numbers.
+        size_t minUsable = size_t(-1);
+        for (int index = valid_moves.begin(); index != valid_moves.end(); index = valid_moves.next(index)) {
+            size_t row = valid_moves[index].row;
+            size_t col = valid_moves[index].col;
+            size_t numUsable = this->nums_usable[row * 9 + col].count();
+            if (numUsable < minUsable) {
+                if (numUsable == 0) {
+                    return -1;
+                }
+                else if (numUsable == 1) {
+                    return index;
+                }
+                minUsable = numUsable;
+                min_index = index;
+            }
+        }
+
+        return min_index;
+    }
+
     int getNextFillCell(SmallFixedDualList<NumInfo, 81> & valid_nums,
                         SmallFixedDualList<PosInfo, 81> & valid_moves,
                         int & out_move_type) {
@@ -375,6 +407,7 @@ public:
         return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
     }
 
+    template <bool isEndGame>
     void updateUsable(size_t row, size_t col, size_t num) {
         size_t cell_y = row * 9;
         for (size_t x = 0; x < Cols; x++) {
@@ -392,109 +425,111 @@ public:
 
         size_t palace_row_idx = row / 3;
         size_t palace_col_idx = col / 3;
-        size_t palace = palace_row_idx * 3 + palace_col_idx;
-        //this->palace_rows[palace][num].reset();
-        //this->palace_cols[palace][num].reset();
-        this->palace_nums[palace][num].reset();
+        if (!isEndGame) {
+            size_t palace = palace_row_idx * 3 + palace_col_idx;
+            //this->palace_rows[palace][num].reset();
+            //this->palace_cols[palace][num].reset();
+            this->palace_nums[palace][num].reset();
 
-        //std::bitset<9> num_bits;
-        //size_t num_mask;
-        size_t palace_row = row % 3;
-        size_t palace_col = col % 3;
-        size_t palace_pos = palace_row * 3 + palace_col;
-        for (size_t _num = 0; _num < SudokuHelper::Numbers; _num++) {
-            if (!this->palaces[palace].test(_num)) {
-                if (this->palace_nums[palace][_num].test(palace_pos)) {
+            //std::bitset<9> num_bits;
+            //size_t num_mask;
+            size_t palace_row = row % 3;
+            size_t palace_col = col % 3;
+            size_t palace_pos = palace_row * 3 + palace_col;
+            for (size_t _num = 0; _num < SudokuHelper::Numbers; _num++) {
+                if (!this->palaces[palace].test(_num)) {
+                    if (this->palace_nums[palace][_num].test(palace_pos)) {
 #if 0
-                    num_bits = this->palace_nums[palace][_num] & this->palace_row_mask[palace_row];
-                    num_mask = size_t(1) << palace_pos;
-                    if (num_bits == num_mask) {
-                        this->palace_rows[palace][_num].reset(palace_row);
-                    }
-                    num_bits = this->palace_nums[palace][_num] & this->palace_col_mask[palace_col];
-                    if (num_bits == num_mask) {
-                        this->palace_cols[palace][_num].reset(palace_col);
-                    }
-#endif
-                    this->palace_nums[palace][_num].reset(palace_pos);
-                }
-            }
-        }
-
-        for (size_t idx = 0; idx < 3; idx++) {
-            size_t palace_row_id = palace_row_idx * 3 + idx;
-            if (idx != palace_col_idx) {
-                if (!this->palaces[palace_row_id].test(num)) {
-#if 0
-                    if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 0)) {
-                        num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
-                        num_mask = size_t(1) << (palace_row * 3 + 0);
+                        num_bits = this->palace_nums[palace][_num] & this->palace_row_mask[palace_row];
+                        num_mask = size_t(1) << palace_pos;
                         if (num_bits == num_mask) {
-                            this->palace_cols[palace_row_id][num].reset(0);
+                            this->palace_rows[palace][_num].reset(palace_row);
                         }
-                    }
-                    if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 1)) {
-                        num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
-                        num_mask = size_t(1) << (palace_row * 3 + 1);
+                        num_bits = this->palace_nums[palace][_num] & this->palace_col_mask[palace_col];
                         if (num_bits == num_mask) {
-                            this->palace_cols[palace_row_id][num].reset(1);
+                            this->palace_cols[palace][_num].reset(palace_col);
                         }
-                    }
-                    if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 2)) {
-                        num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
-                        num_mask = size_t(1) << (palace_row * 3 + 2);
-                        if (num_bits == num_mask) {
-                            this->palace_cols[palace_row_id][num].reset(2);
-                        }
-                    }
-
-                    this->palace_rows[palace_row_id][num].reset(palace_row);
 #endif
-#if USE_ROW_COL_MASK
-                    this->palace_nums[palace_row_id][num] &= this->palace_row_rmask[palace_row];
-#else
-                    this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 0);
-                    this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 1);
-                    this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 2);
-#endif
+                        this->palace_nums[palace][_num].reset(palace_pos);
+                    }
                 }
             }
 
-            size_t palace_col_id = palace_col_idx + idx * 3;
-            if (idx != palace_row_idx) {
-                if (!this->palaces[palace_col_id].test(num)) {
+            for (size_t idx = 0; idx < 3; idx++) {
+                size_t palace_row_id = palace_row_idx * 3 + idx;
+                if (idx != palace_col_idx) {
+                    if (!this->palaces[palace_row_id].test(num)) {
 #if 0
-                    if (this->palace_nums[palace_col_id][num].test(0 * 3 + palace_col)) {
-                        num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
-                        num_mask = size_t(1) << (0 * 3 + palace_col);
-                        if (num_bits == num_mask) {
-                            this->palace_rows[palace_col_id][num].reset(0);
+                        if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 0)) {
+                            num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
+                            num_mask = size_t(1) << (palace_row * 3 + 0);
+                            if (num_bits == num_mask) {
+                                this->palace_cols[palace_row_id][num].reset(0);
+                            }
                         }
-                    }
-                    if (this->palace_nums[palace_col_id][num].test(1 * 3 + palace_col)) {
-                        num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
-                        num_mask = size_t(1) << (1 * 3 + palace_col);
-                        if (num_bits == num_mask) {
-                            this->palace_rows[palace_col_id][num].reset(1);
+                        if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 1)) {
+                            num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
+                            num_mask = size_t(1) << (palace_row * 3 + 1);
+                            if (num_bits == num_mask) {
+                                this->palace_cols[palace_row_id][num].reset(1);
+                            }
                         }
-                    }
-                    if (this->palace_nums[palace_col_id][num].test(2 * 3 + palace_col)) {
-                        num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
-                        num_mask = size_t(1) << (2 * 3 + palace_col);
-                        if (num_bits == num_mask) {
-                            this->palace_rows[palace_col_id][num].reset(2);
+                        if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 2)) {
+                            num_bits = this->palace_nums[palace_row_id][num] & this->palace_col_mask[palace_col];
+                            num_mask = size_t(1) << (palace_row * 3 + 2);
+                            if (num_bits == num_mask) {
+                                this->palace_cols[palace_row_id][num].reset(2);
+                            }
                         }
-                    }
 
-                    this->palace_cols[palace_col_id][num].reset(palace_col);
+                        this->palace_rows[palace_row_id][num].reset(palace_row);
 #endif
 #if USE_ROW_COL_MASK
-                    this->palace_nums[palace_col_id][num] &= this->palace_col_rmask[palace_col];
+                        this->palace_nums[palace_row_id][num] &= this->palace_row_rmask[palace_row];
 #else
-                    this->palace_nums[palace_col_id][num].reset(0 * 3 + palace_col);
-                    this->palace_nums[palace_col_id][num].reset(1 * 3 + palace_col);
-                    this->palace_nums[palace_col_id][num].reset(2 * 3 + palace_col);
+                        this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 0);
+                        this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 1);
+                        this->palace_nums[palace_row_id][num].reset(palace_row * 3 + 2);
 #endif
+                    }
+                }
+
+                size_t palace_col_id = palace_col_idx + idx * 3;
+                if (idx != palace_row_idx) {
+                    if (!this->palaces[palace_col_id].test(num)) {
+#if 0
+                        if (this->palace_nums[palace_col_id][num].test(0 * 3 + palace_col)) {
+                            num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
+                            num_mask = size_t(1) << (0 * 3 + palace_col);
+                            if (num_bits == num_mask) {
+                                this->palace_rows[palace_col_id][num].reset(0);
+                            }
+                        }
+                        if (this->palace_nums[palace_col_id][num].test(1 * 3 + palace_col)) {
+                            num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
+                            num_mask = size_t(1) << (1 * 3 + palace_col);
+                            if (num_bits == num_mask) {
+                                this->palace_rows[palace_col_id][num].reset(1);
+                            }
+                        }
+                        if (this->palace_nums[palace_col_id][num].test(2 * 3 + palace_col)) {
+                            num_bits = this->palace_nums[palace_col_id][num] & this->palace_row_mask[palace_row];
+                            num_mask = size_t(1) << (2 * 3 + palace_col);
+                            if (num_bits == num_mask) {
+                                this->palace_rows[palace_col_id][num].reset(2);
+                            }
+                        }
+
+                        this->palace_cols[palace_col_id][num].reset(palace_col);
+#endif
+#if USE_ROW_COL_MASK
+                        this->palace_nums[palace_col_id][num] &= this->palace_col_rmask[palace_col];
+#else
+                        this->palace_nums[palace_col_id][num].reset(0 * 3 + palace_col);
+                        this->palace_nums[palace_col_id][num].reset(1 * 3 + palace_col);
+                        this->palace_nums[palace_col_id][num].reset(2 * 3 + palace_col);
+#endif
+                    }
                 }
             }
         }
@@ -588,17 +623,19 @@ public:
         this->palaces[palace].set(num);
     }
 
+    template <bool isEndGame = false>
     void doFillNum(size_t row, size_t col, size_t num) {
         size_t palace = row / 3 * 3 + col / 3;
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
-        updateUsable(row, col, num);
+        updateUsable<isEndGame>(row, col, num);
 #if V6_USE_MOVE_PATH
         this->move_path.push_back(MoveInfo((uint32_t)row, (uint32_t)col, (uint32_t)(num + 1)));
 #endif
     }
 
+    template <bool isEndGame = false>
     void undoFillNum(size_t row, size_t col, size_t num) {
         size_t palace = row / 3 * 3 + col / 3;
         this->rows[row].reset(num);
@@ -608,6 +645,66 @@ public:
 #if V6_USE_MOVE_PATH
         this->move_path.pop_back();
 #endif
+    }
+
+    template <bool NeedSearchAllStages = false>
+    bool solve_end(std::vector<std::vector<char>> & board,
+                   SmallFixedDualList<PosInfo, 81> & valid_moves) {
+        if (valid_moves.size() <= 1) {
+            if (NeedSearchAllStages) {
+                this->answers.push_back(board);
+            }
+
+            return true;
+        }
+
+        end_recur_counter++;
+
+        if (kEnableDebugTrace) {
+            if (valid_moves.size() == 28 || valid_moves.size() == 4) {
+                if (valid_moves.size() <= 4)
+                    SudokuHelper::display_board(board);
+            }
+        }
+
+        int move_idx = getNextFillCell(valid_moves);
+        if (move_idx > 0) {
+            size_t row = valid_moves[move_idx].row;
+            size_t col = valid_moves[move_idx].col;
+            valid_moves.remove(move_idx);
+            debug_trace(">>>> valid_moves.remove(move_idx = %d);\n\n", move_idx);
+
+            std::bitset<9> validNums = this->nums_usable[row * 9 + col];
+            size_t num_count = validNums.count();
+            size_t count = 0;
+            assert(validNums.count() != 0);
+            for (size_t num = 0; num < validNums.size(); num++) {
+                // Get usable numbers
+                if (validNums.test(num)) {
+                    doFillNum<true>(row, col, num);
+                    debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
+
+                    board[row][col] = (char)(num + '1');
+
+                    if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
+                        if (!NeedSearchAllStages) {
+                            return true;
+                        }
+                    }
+
+                    board[row][col] = '.';
+                    undoFillNum<true>(row, col, num);
+
+                    count++;
+                    if (count >= num_count)
+                        break;
+                }
+            }
+            valid_moves.push_front(move_idx);
+            debug_trace(">>>> backtracking.\n\n");
+        }
+
+        return false;
     }
 
     template <bool NeedSearchAllStages = false>
@@ -622,12 +719,7 @@ public:
             return true;
         }
 
-        if (kEnableDebugTrace) {
-            if (valid_moves.size() == 28 || valid_moves.size() == 4) {
-                if (valid_moves.size() <= 4)
-                    SudokuHelper::display_board(board);
-            }
-        }
+        recur_counter++;
 
         int move_type;
         int move_idx = getNextFillCell(valid_nums, valid_moves, move_type);
@@ -652,7 +744,7 @@ public:
                     if (validPos.test(pos)) {
                         size_t row = valid_nums[move_idx].palace_row + (pos / 3);
                         size_t col = valid_nums[move_idx].palace_col + (pos % 3);
-                        doFillNum(row, col, num);
+                        doFillNum<false>(row, col, num);
 
                         int pos_index = valid_moves.find(PosInfo(row, col, false));
                         assert(pos_index > 0);
@@ -670,9 +762,19 @@ public:
                             return true;
                         }
 
-                        if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
-                            if (!NeedSearchAllStages) {
-                                return true;
+                        // kEndGameEmptiesThreshold = 40
+                        if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
+                            if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllStages) {
+                                    return true;
+                                }
+                            }
+                        }
+                        else {
+                            if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
+                                if (!NeedSearchAllStages) {
+                                    return true;
+                                }
                             }
                         }
 
@@ -681,7 +783,7 @@ public:
                             valid_moves.push_front(pos_index);
                         }
 
-                        undoFillNum(row, col, num);
+                        undoFillNum<false>(row, col, num);
 
                         //matrix3_copy(this->palace_rows, save_palace_rows);
                         //matrix3_copy(this->palace_cols, save_palace_cols);
@@ -709,7 +811,7 @@ public:
                 for (size_t num = 0; num < validNums.size(); num++) {
                     // Get usable numbers
                     if (validNums.test(num)) {
-                        doFillNum(row, col, num);
+                        doFillNum<false>(row, col, num);
 
                         size_t palace = valid_moves[move_idx].palace;
                         int num_index = valid_nums.find(NumInfo((uint32_t)palace, (uint32_t)num, false));
@@ -728,9 +830,19 @@ public:
                             return true;
                         }
 
-                        if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
-                            if (!NeedSearchAllStages) {
-                                return true;
+                        // kEndGameEmptiesThreshold = 40
+                        if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
+                            if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllStages) {
+                                    return true;
+                                }
+                            }
+                        }
+                        else {
+                            if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
+                                if (!NeedSearchAllStages) {
+                                    return true;
+                                }
                             }
                         }
 
@@ -739,7 +851,7 @@ public:
                             valid_nums.push_front(num_index);
                         }
 
-                        undoFillNum(row, col, num);
+                        undoFillNum<false>(row, col, num);
 
                         //matrix3_copy(this->palace_rows, save_palace_rows);
                         //matrix3_copy(this->palace_cols, save_palace_cols);
@@ -760,6 +872,8 @@ public:
 
     void solveSudoku(std::vector<std::vector<char>> & board) {
         SudokuHelper::display_board(board, true);
+        recur_counter = 0;
+        end_recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
@@ -784,7 +898,6 @@ public:
         }
         valid_moves.finalize();
 
-Find_Next_Step:
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
@@ -813,14 +926,16 @@ Find_Next_Step:
             }
         }
 
+Find_Next_Step:
         // Find and fill the position that unique number.
         for (int index = valid_moves.begin(); index != valid_moves.end(); index = valid_moves.next(index)) {
             size_t row = valid_moves[index].row;
             size_t col = valid_moves[index].col;
-            if (this->nums_usable[row * 9 + col].count() == 1) {
+            size_t num_count = this->nums_usable[row * 9 + col].count();
+            if (num_count == 1) {
                 for (size_t num = 0; num < SudokuHelper::Numbers; num++) {
                     if (this->nums_usable[row * 9 + col].test(num)) {
-                        doFillNum(row, col, num);
+                        doFillNum<false>(row, col, num);
                         board[row][col] = (char)(num + '1');
                         valid_moves.remove(index);
                         goto Find_Next_Step;
@@ -841,7 +956,7 @@ Find_Next_Step:
                             size_t row = palace_row * 3 + pos / 3;
                             size_t col = palace_col * 3 + pos % 3;
 
-                            doFillNum(row, col, num);
+                            doFillNum<false>(row, col, num);
                             board[row][col] = (char)(num + '1');
 
                             int index = valid_moves.find(PosInfo((uint32_t)row, (uint32_t)col));
@@ -875,9 +990,15 @@ Find_Next_Step:
         else
             SudokuHelper::display_board(board);
 
-        printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+        printf("Elapsed time: %0.3f ms\n\n"
+               "recur_counter: %u, end_recur_counter: %u\n\n",
+               sw.getElapsedMillisec(), (uint32_t)recur_counter,
+               (uint32_t)end_recur_counter);
     }
 };
+
+size_t Solution::recur_counter = 0;
+size_t Solution::end_recur_counter = 0;
 
 } // namespace v6
 } // namespace Problem_37

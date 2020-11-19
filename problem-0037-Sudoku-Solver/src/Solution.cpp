@@ -23,7 +23,7 @@
 #include "CPUWarmUp.h"
 
 // Index: [0 - 4]
-#define TEST_CASE_INDEX         2
+#define TEST_CASE_INDEX         4
 
 struct SudokuBoard {
     char board[81];

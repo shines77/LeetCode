@@ -143,6 +143,8 @@ public:
     static const size_t Cols = SudokuHelper::Cols;
     static const size_t Numbers = SudokuHelper::Numbers;
 
+    static size_t recur_counter;
+
     struct Position {
         size_t row;
         size_t col;
@@ -297,6 +299,8 @@ public:
             return true;
         }
 
+        recur_counter++;
+
         int move_idx = getNextFillCell(valid_moves);
         if (move_idx > 0) {
             size_t row = valid_moves[move_idx].row;
@@ -327,6 +331,7 @@ public:
 
     void solveSudoku(std::vector<std::vector<char>> & board) {
         SudokuHelper::display_board(board, true);
+        recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
@@ -368,9 +373,12 @@ public:
 #else
         SudokuHelper::display_board(board);
 #endif
-        printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+               sw.getElapsedMillisec(), (uint32_t)recur_counter);
     }
 };
+
+size_t Solution::recur_counter = 0;
 
 } // namespace v5
 } // namespace Problem_37
