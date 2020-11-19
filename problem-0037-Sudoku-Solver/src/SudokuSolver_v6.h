@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <memory.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <assert.h>
 
 #include <cstdint>
