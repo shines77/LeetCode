@@ -34,22 +34,22 @@ public:
 
     static size_t recur_counter;
 
-    struct Position {
-        size_t row;
-        size_t col;
+    struct PosInfo {
+        uint32_t row;
+        uint32_t col;
 
-        Position() = default;
-        Position(size_t row, size_t col) : row(row), col(col) {};
-        ~Position() = default;
+        PosInfo() = default;
+        PosInfo(size_t row, size_t col) : row((uint32_t)row), col((uint32_t)col) {};
+        ~PosInfo() = default;
     };
 
-    typedef typename std::list<Position>::const_iterator cmove_iterator;
+    typedef typename std::list<PosInfo>::const_iterator cmove_iterator;
 
 private:
     SmallBitMatrix2<9, 9>  rows;
     SmallBitMatrix2<9, 9>  cols;
     SmallBitMatrix2<9, 9>  palaces;
-    SmallBitMatrix2<81, 9> usable;
+    SmallBitMatrix2<81, 9> nums_usable;
 
 #if V4_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
@@ -59,7 +59,7 @@ public:
     Solution() = default;
     ~Solution() = default;
 
-    bool getNextFillCell(std::list<Position> & valid_moves,
+    bool getNextFillCell(std::list<PosInfo> & valid_moves,
                          cmove_iterator & out_iter) {
         assert(valid_moves.size() > 0);
         size_t minUsable = size_t(-1);
@@ -68,7 +68,7 @@ public:
              iter != valid_moves.cend(); ++iter) {
             size_t row = iter->row;
             size_t col = iter->col;
-            size_t numUsable = this->usable[row * 9 + col].count();
+            size_t numUsable = this->nums_usable[row * 9 + col].count();
             if (numUsable < minUsable) {
                 if (numUsable == 0) {
                     return false;
@@ -99,14 +99,14 @@ public:
         size_t cell_y = row * 9;
         for (size_t x = 0; x < Cols; x++) {
             if (x != col) {
-                this->usable[cell_y + x].reset(num);
+                this->nums_usable[cell_y + x].reset(num);
             }
         }
 
         size_t cell_x = col;
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
-                this->usable[y * 9 + cell_x].reset(num);
+                this->nums_usable[y * 9 + cell_x].reset(num);
             }
         }
 
@@ -118,7 +118,7 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    this->usable[pos].reset(num);
+                    this->nums_usable[pos].reset(num);
                 }
                 pos++;
             }
@@ -133,7 +133,7 @@ public:
         for (size_t x = 0; x < Cols; x++) {
             if (isUndo || x != col) {
                 size_t palace = palace_row + x / 3;
-                this->usable[cell_y + x] = getUsable(row, x, palace);
+                this->nums_usable[cell_y + x] = getUsable(row, x, palace);
             }
         }
 
@@ -142,7 +142,7 @@ public:
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
                 size_t palace = y / 3 * 3 + palace_col;
-                this->usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
             }
         }
 
@@ -153,7 +153,7 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    this->usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
                 }
                 pos++;
             }
@@ -185,7 +185,7 @@ public:
     }
 
     bool solve(std::vector<std::vector<char>> & board,
-               std::list<Position> & valid_moves) {
+               std::list<PosInfo> & valid_moves) {
         if (valid_moves.size() == 0) {
 #if V4_SEARCH_ALL_STAGE
             this->answers.push_back(board);
@@ -201,7 +201,7 @@ public:
             size_t row = moveIter->row;
             size_t col = moveIter->col;
             valid_moves.erase(moveIter);
-            const std::bitset<9> & fillNums = this->usable[row * 9 + col];
+            const std::bitset<9> & fillNums = this->nums_usable[row * 9 + col];
             for (size_t num = 0; num < fillNums.size(); num++) {
                 // Get usable numbers
                 if (fillNums.test(num)) {
@@ -231,7 +231,7 @@ public:
         jtest::StopWatch sw;
         sw.start();
 
-        std::list<Position> valid_moves;
+        std::list<PosInfo> valid_moves;
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
@@ -251,7 +251,7 @@ public:
             for (size_t col = 0; col < line.size(); col++) {
                 char val = line[col];
                 if (val == '.') {
-                    this->usable[row * 9 + col] = getUsable(row, col);
+                    this->nums_usable[row * 9 + col] = getUsable(row, col);
                 }
             }
         }

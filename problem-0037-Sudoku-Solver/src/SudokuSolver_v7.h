@@ -77,7 +77,7 @@ private:
     node_type        data_[kCapacity];
 
     void init() {
-        this->data_[0].prev = 1;
+        this->data_[0].prev = 0;
         this->data_[0].next = 1;
     }
 
@@ -141,8 +141,9 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[this->data_[index].prev].next = this->data_[index].next;
-        this->data_[this->data_[index].next].prev = this->data_[index].prev;
+        node_type & node = this->data_[index];
+        this->data_[node.prev].next = node.next;
+        this->data_[node.next].prev = node.prev;
         assert(this->size_ > 0);
         this->size_--;
     }
@@ -164,8 +165,9 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[this->data_[index].next].prev = index;
-        this->data_[this->data_[index].prev].next = index;
+        node_type & node = this->data_[index];
+        this->data_[node.next].prev = index;
+        this->data_[node.prev].next = index;
         this->size_++;
     }
 
@@ -277,7 +279,9 @@ private:
     std::vector<MoveInfo> move_path;
 #endif
 
+#if V7_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
+#endif
 
 public:
     Solution() {
@@ -657,10 +661,11 @@ public:
     bool solve_end(std::vector<std::vector<char>> & board,
                    SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
+#if V7_SEARCH_ALL_STAGE
             if (NeedSearchAllStages) {
                 this->answers.push_back(board);
             }
-
+#endif
             return true;
         }
 
@@ -738,10 +743,11 @@ public:
                SmallFixedDualList<NumInfo, 81> & valid_nums,
                SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
+#if V7_SEARCH_ALL_STAGE
             if (NeedSearchAllStages) {
                 this->answers.push_back(board);
             }
-
+#endif
             return true;
         }
 
@@ -1022,10 +1028,11 @@ Find_Next_Step:
 
         sw.stop();
 
-        if (kSearchAllStages)
-            SudokuHelper::display_answers(this->answers);
-        else
-            SudokuHelper::display_board(board);
+#if V7_SEARCH_ALL_STAGE
+        SudokuHelper::display_answers(this->answers);
+#else
+        SudokuHelper::display_board(board);
+#endif
 
         printf("Elapsed time: %0.3f ms\n\n"
                "recur_counter: %u, end_recur_counter: %u\n\n",

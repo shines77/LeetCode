@@ -1,6 +1,6 @@
 
-#ifndef LEETCODE_SUDOKU_SOLVER_V3_H
-#define LEETCODE_SUDOKU_SOLVER_V3_H
+#ifndef LEETCODE_SUDOKU_SOLVER_V6_H
+#define LEETCODE_SUDOKU_SOLVER_V6_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
@@ -14,14 +14,97 @@
 #include <cstdint>
 #include <cstddef>
 #include <vector>
+#include <list>
 #include <bitset>
 
 #include "SudokuSolver.h"
 #include "StopWatch.h"
 
+#define V6_SEARCH_ALL_STAGE     0
+
 namespace LeetCode {
 namespace Problem_37 {
-namespace v3 {
+namespace v6 {
+
+template <typename T, size_t Capacity>
+class SmallFixedStack {
+public:
+    typedef T                               value_type;
+    typedef SmallFixedStack<T, Capacity>    this_type;
+
+    static const size_t kCapacity = Capacity;
+
+private:
+    int             head_;
+    int             capacity_;
+    value_type      data_[kCapacity];
+
+public:
+    SmallFixedStack() : head_(0), capacity_(0) {
+    }
+    ~SmallFixedStack() {}
+
+    int begin() const { return this->head_; }
+    int end() const   { return this->capacity_; }
+
+    int next(int index) const {
+        return (index + 1);
+    }
+
+    int has_next(int index) const {
+        return (this->head_ + index < this->capacity_);
+    }
+
+    size_t head() const { return this->head_; }
+    size_t tail() const { return (this->capacity_ - 1); }
+
+    size_t size() const { return (this->capacity_ - this->head_); }
+    size_t capacity() const { return this->capacity_; }
+    size_t max_capacity() const { return this_type::kCapacity; }
+
+    void finalize() {
+        assert(this->capacity_ >= 1);
+    }
+
+    template <typename ... Args>
+    void insert(int index, Args && ... args) {
+        assert(index >= 0);
+        assert(index < this->max_capacity());
+        assert(this->capacity_ < this->max_capacity());
+        new (&(this->data_[index])) value_type(std::forward<Args>(args)...);
+        this->capacity_++;
+    }
+
+    void remove(int index) {
+        assert(index >= this->head_);
+        assert(index < this->capacity());
+        assert(this->size() > 0);
+        assert(this->size() <= this->capacity());
+        assert(this->size() <= this->max_capacity());
+        if (index != this->head_) {
+            this->swap(this->head_, index);
+        }
+        this->head_++;
+    }
+
+    void restore() {
+        assert(this->size() >= 0);
+        assert(this->size() <= this->capacity());
+        assert(this->size() <= this->max_capacity());
+        this->head_--;
+    }
+
+    void swap(int index1, int index2) {
+        assert(index1 != index2);
+        std::swap(this->data_[index1], this->data_[index2]);
+    }
+
+    const value_type & operator [] (int index) const {
+        assert(index < this->capacity());
+        assert(index < this->max_capacity());
+        return this->data_[index];
+    };
+};
 
 class Solution {
 public:
@@ -29,51 +112,52 @@ public:
     static const size_t Cols = SudokuHelper::Cols;
     static const size_t Numbers = SudokuHelper::Numbers;
 
+    static size_t recur_counter;
+
+    struct PosInfo {
+        uint32_t row;
+        uint32_t col;
+
+        PosInfo() = default;
+        PosInfo(size_t row, size_t col) : row((uint32_t)row), col((uint32_t)col) {};
+        ~PosInfo() = default;
+    };
+
 private:
     SmallBitMatrix2<9, 9>  rows;
     SmallBitMatrix2<9, 9>  cols;
     SmallBitMatrix2<9, 9>  palaces;
     SmallBitMatrix2<81, 9> nums_usable;
 
+#if V6_SEARCH_ALL_STAGE
+    std::vector<std::vector<std::vector<char>>> answers;
+#endif
+
 public:
     Solution() = default;
     ~Solution() = default;
 
-    bool getNextFillCell(const std::vector<std::vector<char>> & board,
-                         size_t & out_row, size_t & out_col) {
+    int getNextFillCell(SmallFixedStack<PosInfo, 81> & valid_moves) {
+        assert(valid_moves.size() > 0);
         size_t minUsable = size_t(-1);
-        size_t min_row, min_col;
-        for (size_t row = 0; row < board.size(); row++) {
-            const std::vector<char> & line = board[row];
-            for (size_t col = 0; col < line.size(); col++) {
-                // Only search empty cell
-                if (board[row][col] == '.') {
-                    size_t numUsable = this->nums_usable[row * 9 + col].count();
-                    if (numUsable < minUsable) {
-                        if (numUsable == 0) {
-                            return false;
-                        }
-                        else if (numUsable == 1) {
-                            out_row = row;
-                            out_col = col;
-                            return true;
-                        }
-                        minUsable = numUsable;
-                        min_row = row;
-                        min_col = col;
-                    }
+        int min_index = -1;
+        for (int index = valid_moves.begin(); index != valid_moves.end(); index++) {
+            size_t row = valid_moves[index].row;
+            size_t col = valid_moves[index].col;
+            size_t numUsable = this->nums_usable[row * 9 + col].count();
+            if (numUsable < minUsable) {
+                if (numUsable == 0) {
+                    return -1;
                 }
+                else if (numUsable == 1) {
+                    return index;
+                }
+                minUsable = numUsable;
+                min_index = index;
             }
         }
 
-        if (minUsable != size_t(-1)) {
-            out_row = min_row;
-            out_col = min_col;
-            return true;
-        }
-        else {
-            return false;
-        }
+        return min_index;
     }
 
     std::bitset<9> getUsable(size_t row, size_t col) {
@@ -174,14 +258,22 @@ public:
         updateUndoUsable<true>(row, col);
     }
 
-    bool solve(std::vector<std::vector<char>> & board, size_t empties) {
-        if (empties == 0) {
+    bool solve(std::vector<std::vector<char>> & board,
+               SmallFixedStack<PosInfo, 81> & valid_moves) {
+        if (valid_moves.size() == 0) {
+#if V6_SEARCH_ALL_STAGE
+            this->answers.push_back(board);
+#endif
             return true;
         }
 
-        size_t row, col;
-        bool hasMoves = getNextFillCell(board, row, col);
-        if (hasMoves) {
+        recur_counter++;
+
+        int move_idx = getNextFillCell(valid_moves);
+        if (move_idx >= 0) {
+            size_t row = valid_moves[move_idx].row;
+            size_t col = valid_moves[move_idx].col;
+            valid_moves.remove(move_idx);
             const std::bitset<9> & fillNums = this->nums_usable[row * 9 + col];
             for (size_t num = 0; num < fillNums.size(); num++) {
                 // Get usable numbers
@@ -189,14 +281,17 @@ public:
                     doFillNum(row, col, num);
                     board[row][col] = (char)(num + '1');
 
-                    if (solve(board, empties - 1)) {
+                    if (solve(board, valid_moves)) {
+#if (V6_SEARCH_ALL_STAGE == 0)
                         return true;
+#endif
                     }
 
                     board[row][col] = '.';
                     undoFillNum(row, col, num);
                 }
             }
+            valid_moves.restore();
         }
 
         return false;
@@ -204,11 +299,13 @@ public:
 
     void solveSudoku(std::vector<std::vector<char>> & board) {
         SudokuHelper::display_board(board, true);
+        recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
 
-        size_t empties = 0;
+        int index = 0;
+        SmallFixedStack<PosInfo, 81> valid_moves;
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
@@ -218,10 +315,12 @@ public:
                     fillNum(row, col, num);
                 }
                 else {
-                    empties++;
+                    valid_moves.insert(index, row, col);
+                    index++;
                 }
             }   
         }
+        valid_moves.finalize();
 
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
@@ -233,17 +332,24 @@ public:
             }
         }
 
-        this->solve(board, empties);
+        this->solve(board, valid_moves);
 
         sw.stop();
 
+#if V6_SEARCH_ALL_STAGE
+        SudokuHelper::display_answers(this->answers);
+#else
         SudokuHelper::display_board(board);
-        printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+#endif
+        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+               sw.getElapsedMillisec(), (uint32_t)recur_counter);
     }
 };
 
-} // namespace v3
+size_t Solution::recur_counter = 0;
+
+} // namespace v6
 } // namespace Problem_37
 } // namespace LeetCode
 
-#endif // LEETCODE_SUDOKU_SOLVER_V3_H
+#endif // LEETCODE_SUDOKU_SOLVER_V6_H

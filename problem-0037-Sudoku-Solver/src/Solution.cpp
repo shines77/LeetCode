@@ -16,7 +16,7 @@
 #include "SudokuSolver_v3.h"
 #include "SudokuSolver_v4.h"
 #include "SudokuSolver_v5.h"
-//#include "SudokuSolver_v6.h"
+#include "SudokuSolver_v6.h"
 #include "SudokuSolver_v7.h"
 
 #include "ice_sudoku_solver.h"
@@ -249,6 +249,24 @@ int main(int argc, char * argv[])
         }
 
         v5::Solution solution;
+        solution.solveSudoku(board);
+    }
+
+    if (1)
+    {
+        printf("--------------------------------\n\n");
+        printf("SudokuSolver: v6::Solution - dfs\n\n");
+
+        std::vector<std::vector<char>> board;
+        for (size_t row = 0; row < SudokuHelper::Rows; row++) {
+            std::vector<char> line;
+            for (size_t col = 0; col < SudokuHelper::Cols; col++) {
+                line.push_back(test_case[TEST_CASE_INDEX].board[row * 9 + col]);
+            }
+            board.push_back(line);
+        }
+
+        v6::Solution solution;
         solution.solveSudoku(board);
     }
 
