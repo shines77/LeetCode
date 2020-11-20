@@ -19,6 +19,7 @@
 #include <bitset>
 
 #include "SudokuSolver.h"
+#include "BitScan.h"
 #include "StopWatch.h"
 
 #define V6_SEARCH_ALL_STAGE     0
@@ -266,6 +267,9 @@ private:
 
     SmallBitMatrix2<3, 9>   palace_row_rmask;
     SmallBitMatrix2<3, 9>   palace_col_rmask;
+
+    int row_col_index[82];
+    int palace_num_index[82];
 
 #if V6_USE_MOVE_PATH
     std::vector<MoveInfo> move_path;
@@ -676,30 +680,50 @@ public:
 
             std::bitset<9> validNums = this->nums_usable[row * 9 + col];
             size_t num_count = validNums.count();
-            size_t count = 0;
-            assert(validNums.count() != 0);
-            for (size_t num = 0; num < validNums.size(); num++) {
-                // Get usable numbers
-                if (validNums.test(num)) {
-                    doFillNum<true>(row, col, num);
-                    debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
+            assert(num_count != 0);
+            if (num_count == 1) {
+                size_t numBits = validNums.to_ullong();
+                size_t num = jstd::bitscan::bsf(numBits);
+                doFillNum<true>(row, col, num);
+                debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
 
-                    board[row][col] = (char)(num + '1');
+                board[row][col] = (char)(num + '1');
 
-                    if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
-                        if (!NeedSearchAllStages) {
-                            return true;
-                        }
+                if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
+                    if (!NeedSearchAllStages) {
+                        return true;
                     }
+                }
 
-                    board[row][col] = '.';
-                    undoFillNum<true>(row, col, num);
+                board[row][col] = '.';
+                undoFillNum<true>(row, col, num);
+            }
+            else {
+                size_t count = 0;
+                for (size_t num = 0; num < validNums.size(); num++) {
+                    // Get usable numbers
+                    if (validNums.test(num)) {
+                        doFillNum<true>(row, col, num);
+                        debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
 
-                    count++;
-                    if (count >= num_count)
-                        break;
+                        board[row][col] = (char)(num + '1');
+
+                        if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
+                            if (!NeedSearchAllStages) {
+                                return true;
+                            }
+                        }
+
+                        board[row][col] = '.';
+                        undoFillNum<true>(row, col, num);
+
+                        count++;
+                        if (count >= num_count)
+                            break;
+                    }
                 }
             }
+
             valid_moves.push_front(move_idx);
             debug_trace(">>>> backtracking.\n\n");
         }
@@ -746,7 +770,8 @@ public:
                         size_t col = valid_nums[move_idx].palace_col + (pos % 3);
                         doFillNum<false>(row, col, num);
 
-                        int pos_index = valid_moves.find(PosInfo(row, col, false));
+                        //int pos_index = valid_moves.find(PosInfo(row, col, false));
+                        int pos_index = this->row_col_index[row * 9 + col];
                         assert(pos_index > 0);
                         if (!kAllowFindInvalidIndex || (pos_index > 0)) {
                             valid_moves.remove(pos_index);
@@ -814,7 +839,8 @@ public:
                         doFillNum<false>(row, col, num);
 
                         size_t palace = valid_moves[move_idx].palace;
-                        int num_index = valid_nums.find(NumInfo((uint32_t)palace, (uint32_t)num, false));
+                        //int num_index = valid_nums.find(NumInfo(palace, num, false));
+                        int num_index = this->palace_num_index[palace * 9 + num];
                         assert(num_index > 0);
                         if (!kAllowFindInvalidIndex || (num_index > 0)) {
                             valid_nums.remove(num_index);
@@ -885,13 +911,16 @@ public:
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
+                size_t pos = row * 9 + col;
                 char val = line[col];
                 if (val != '.') {
+                    this->row_col_index[pos] = -1;
                     size_t num = val - '1';
                     this->fillNum(row, col, num);
                 }
                 else {
-                    valid_moves.insert(index, (uint32_t)row, (uint32_t)col);
+                    this->row_col_index[pos] = index;
+                    valid_moves.insert(index, row, col);
                     index++;
                 }
             }   
@@ -959,9 +988,10 @@ Find_Next_Step:
                             doFillNum<false>(row, col, num);
                             board[row][col] = (char)(num + '1');
 
-                            int index = valid_moves.find(PosInfo((uint32_t)row, (uint32_t)col));
-                            assert (index != -1);
-                            valid_moves.remove(index);
+                            //int move_index = valid_moves.find(PosInfo((uint32_t)row, (uint32_t)col));
+                            int move_index = this->row_col_index[row * 9 + col];
+                            assert (move_index > 0);
+                            valid_moves.remove(move_index);
                             goto Find_Next_Step;
                         }
                     }
@@ -972,10 +1002,15 @@ Find_Next_Step:
         int num_index = 1;
         for (size_t palace = 0; palace < SudokuHelper::Palaces; palace++) {
             for (size_t num = 0; num < SudokuHelper::Numbers; num++) {
+                size_t palace_pos = palace * 9 + num;
                 size_t pos_count = this->palace_nums[palace][num].count();
                 if (pos_count > 1) {
+                    this->palace_num_index[palace_pos] = num_index;
                     valid_nums.insert(num_index, palace, num);
                     num_index++;
+                }
+                else {
+                    this->palace_num_index[palace_pos] = -1;
                 }
             }
         }

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\BitScan.h" />
     <ClInclude Include="src\CPUWarmUp.h" />
     <ClInclude Include="src\ice_sudoku_solver.h" />
     <ClInclude Include="src\StopWatch.h" />

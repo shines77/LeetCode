@@ -6,7 +6,7 @@
 #pragma once
 #endif
 
-#include <time.h>   // For ::clock()
+#include <time.h>       // For ::clock()
 
 #if defined(_WIN32) || defined(WIN32) || defined(OS_WINDOWS) || defined(_WINDOWS_)
 #ifndef WIN32_LEAN_AND_MEAN

@@ -21,6 +21,7 @@
 #include "ice_sudoku_solver.h"
 
 #include "CPUWarmUp.h"
+#include "StopWatch.h"
 
 // Index: [0 - 4]
 #define TEST_CASE_INDEX         4
