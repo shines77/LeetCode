@@ -307,7 +307,7 @@ int main(int argc, char * argv[])
         solution.solveSudoku(board);
     }
 
-    if (0)
+    if (1)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: ice suduku\n\n");
@@ -323,6 +323,8 @@ int main(int argc, char * argv[])
                     sudo_in[row][col] = val - '0';
             }
         }
+
+        ::srand((unsigned int)time(0));
 
         jtest::StopWatch sw;
         sw.start();

@@ -7,6 +7,7 @@
 #endif
 
 //#include <stdint.h>
+//#include <stddef.h>
 #include <assert.h>
 
 #if (defined(_MSC_VER) && (_MSC_VER >= 1500)) || defined(__MINGW32__) || defined(__CYGWIN__)
@@ -202,6 +203,7 @@ struct bitscan {
     static inline
     int bsf32(unsigned int x) {
         assert(x != 0);
+        // gcc: __bsfd(x)
         return __builtin_ctz(x);
     }
 
@@ -209,13 +211,15 @@ struct bitscan {
     static inline
     int bsf64(unsigned long long x) {
         assert(x != 0);
-        return __bsfq(x);
+        // gcc: __bsfq(x)
+        return __builtin_ctzll(x);
     }
 #endif
 
     static inline
     int bsr32(unsigned int x) {
         assert(x != 0);
+        // gcc: __bsrd(x)
         return __builtin_clz(x);
     }
 
@@ -223,7 +227,8 @@ struct bitscan {
     static inline
     int bsr64(unsigned long long x) {
         assert(x != 0);
-        return __bsrq(x);
+        // gcc: __bsrq(x)
+        return __builtin_clzll(x);
     }
 #endif
 
