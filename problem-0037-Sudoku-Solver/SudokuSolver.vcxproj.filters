@@ -43,6 +43,9 @@
     <ClInclude Include="src\SudokuSolver_v6.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\SudokuSolver_v8.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Solution.cpp">
