@@ -1,6 +1,6 @@
 
-#ifndef LEETCODE_SUDOKU_SOLVER_V6_H
-#define LEETCODE_SUDOKU_SOLVER_V6_H
+#ifndef LEETCODE_SUDOKU_SOLVER_V7_H
+#define LEETCODE_SUDOKU_SOLVER_V7_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
@@ -22,7 +22,7 @@
 #include "BitScan.h"
 #include "StopWatch.h"
 
-#define V6_SEARCH_ALL_STAGE     0
+#define V7_SEARCH_ALL_STAGE     0
 
 #ifdef NDEBUG
 #define V6_USE_MOVE_PATH        0
@@ -34,9 +34,9 @@
 
 namespace LeetCode {
 namespace Problem_37 {
-namespace v6 {
+namespace v7 {
 
-#if V6_SEARCH_ALL_STAGE
+#if V7_SEARCH_ALL_STAGE
 static const bool kSearchAllStages = true;
 #else
 static const bool kSearchAllStages = false;
@@ -268,8 +268,10 @@ private:
     SmallBitMatrix2<3, 9>   palace_row_rmask;
     SmallBitMatrix2<3, 9>   palace_col_rmask;
 
-    int row_col_index[82];
-    int palace_num_index[82];
+    uint8_t row_col_index[88];
+    uint8_t palace_num_index[88];
+
+    BitMatrix3<9, 9, 9> save_palace_nums;
 
 #if V6_USE_MOVE_PATH
     std::vector<MoveInfo> move_path;
@@ -1035,8 +1037,8 @@ Find_Next_Step:
 size_t Solution::recur_counter = 0;
 size_t Solution::end_recur_counter = 0;
 
-} // namespace v6
+} // namespace v7
 } // namespace Problem_37
 } // namespace LeetCode
 
-#endif // LEETCODE_SUDOKU_SOLVER_V6_H
+#endif // LEETCODE_SUDOKU_SOLVER_V7_H

@@ -34,10 +34,10 @@
     <ClInclude Include="src\ice_sudoku_solver.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\SudokuSolver_v6.h">
+    <ClInclude Include="src\BitScan.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\BitScan.h">
+    <ClInclude Include="src\SudokuSolver_v7.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
