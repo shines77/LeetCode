@@ -255,42 +255,21 @@ struct bitscan {
 
 #endif // (_MSC_VER && _MSC_VER >= 1500)
 
+    static inline int bsf(size_t x) {
 #if (JSTD_WORD_BITS == 64)
-  #if (defined(_MSC_VER) && (_MSC_VER >= 1500)) || defined(__MINGW32__) || defined(__CYGWIN__)
-    static inline
-    int bsf(unsigned __int64 x) {
         return bitscan::bsf64(x);
-    }
-  #else
-    static inline
-    int bsf(unsigned long long x) {
-        return bitscan::bsf64(x);
-    }
-  #endif // (_MSC_VER && _MSC_VER >= 1500)
 #else
-    static inline int bsf(unsigned int x) {
         return bitscan::bsf32(x);
+#endif
     }
-#endif // JSTD_WORD_BITS
 
+    static inline int bsr(size_t x) {
 #if (JSTD_WORD_BITS == 64)
-  #if (defined(_MSC_VER) && (_MSC_VER >= 1500)) || defined(__MINGW32__) || defined(__CYGWIN__)
-    static inline
-    int bsr(unsigned __int64 x) {
         return bitscan::bsr64(x);
-    }
-  #else
-    static inline
-    int bsr(unsigned long long x) {
-        return bitscan::bsr64(x);
-    }
-  #endif // (_MSC_VER && _MSC_VER >= 1500)
 #else
-    static inline
-    int bsr(unsigned int x) {
         return bitscan::bsr32(x);
+#endif
     }
-#endif // JSTD_WORD_BITS
 
 };
 
