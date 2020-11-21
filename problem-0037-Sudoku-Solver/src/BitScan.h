@@ -19,13 +19,17 @@
 	#include <x86intrin.h>
 #endif
 
-#if defined(WIN64) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) \
+ #if defined(WIN64) || defined(_WIN64) || defined(_M_X64) || defined(_M_AMD64) \
  || defined(_M_IA64) || defined(__amd64__) || defined(__x86_64__)
-#define JSTD_IS_X86_64      1
-#define JSTD_WORD_BITS      64
+  #define JSTD_IS_X86       1
+  #define JSTD_IS_X86_64    1
+  #define JSTD_WORD_SIZE    64
 #else
-#define JSTD_IS_X86_64      0
-#define JSTD_WORD_BITS      32
+  #if defined(WIN32) || defined(_WIN32) || defined(__i386__)
+    #define JSTD_IS_X86     1
+    #define JSTD_IS_X86_32  1
+  #endif
+  #define JSTD_WORD_SIZE    32
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1500) // >= VC 2008
@@ -47,7 +51,7 @@ typedef long long           int64_t;
 typedef unsigned long long  uint64_t;
 #endif // (_MSC_VER && _MSC_VER >= 1500)
 
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
 typedef int64_t         ssize_t;
 typedef uint64_t        size_t;
 #else
@@ -168,7 +172,7 @@ struct bitscan {
         return (int)index;
     }
 
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
     static inline
     int bsf64(unsigned __int64 x) {
         assert(x != 0);
@@ -186,7 +190,7 @@ struct bitscan {
         return (int)index;
     }
 
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
     static inline
     int bsr64(unsigned __int64 x) {
         assert(x != 0);
@@ -207,7 +211,7 @@ struct bitscan {
         return __builtin_ctz(x);
     }
 
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
     static inline
     int bsf64(unsigned long long x) {
         assert(x != 0);
@@ -223,7 +227,7 @@ struct bitscan {
         return __builtin_clz(x);
     }
 
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
     static inline
     int bsr64(unsigned long long x) {
         assert(x != 0);
@@ -261,7 +265,7 @@ struct bitscan {
 #endif // (_MSC_VER && _MSC_VER >= 1500)
 
     static inline int bsf(size_t x) {
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
         return bitscan::bsf64(x);
 #else
         return bitscan::bsf32(x);
@@ -269,7 +273,7 @@ struct bitscan {
     }
 
     static inline int bsr(size_t x) {
-#if (JSTD_WORD_BITS == 64)
+#if (JSTD_WORD_SIZE == 64)
         return bitscan::bsr64(x);
 #else
         return bitscan::bsr32(x);
@@ -280,7 +284,9 @@ struct bitscan {
 
 } // namespace jstd
 
+#undef JSTD_IS_X86
+#undef JSTD_IS_X86_32
 #undef JSTD_IS_X86_64
-#undef JSTD_WORD_BITS
+#undef JSTD_WORD_SIZE
 
 #endif // JSTD_SUPPORT_BITSCAN_H
