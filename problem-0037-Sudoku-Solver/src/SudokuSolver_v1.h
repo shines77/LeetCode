@@ -85,10 +85,10 @@ private:
                     matrix[index].set(81 * 2 + col * 9 + number);
                     matrix[index].set(81 * 3 + (row / 3 * 3 + col / 3) * 9 + number);
 #else
-                    matrix[index][81 * 0 + row * 9 + col] = 1;
-                    matrix[index][81 * 1 + row * 9 + number] = 1;
-                    matrix[index][81 * 2 + col * 9 + number] = 1;
-                    matrix[index][81 * 3 + palace * 9 + number] = 1;
+                    matrix[index][81 * 0 + row * 9 + col] = true;
+                    matrix[index][81 * 1 + row * 9 + number] = true;
+                    matrix[index][81 * 2 + col * 9 + number] = true;
+                    matrix[index][81 * 3 + palace * 9 + number] = true;
 #endif
                     rows[index + 1] = row;
                     cols[index + 1] = col;
@@ -115,9 +115,9 @@ private:
         int row, col;
     };
     
-    std::vector<Node>   link_list;
+    std::vector<Node>   linked_list;
     std::vector<int>    col_size;
-    int                 free_idx;
+    int                 last_idx;
     std::vector<int>    answer;
 #if V1_SEARCH_ALL_STAGE
     std::vector<std::vector<int>> answers;
@@ -145,13 +145,13 @@ private:
 
 public:
     DancingLinks(typename SudokuSolver::matrix_type & matrix, size_t nodes)
-        : link_list(nodes), col_size(matrix.cols() + 1), free_idx((int)matrix.cols() + 1) {
+        : linked_list(nodes), col_size(matrix.cols() + 1), last_idx((int)matrix.cols() + 1) {
         this->init(matrix);
     }
 
     ~DancingLinks() {}
 
-    bool is_empty() const { return (link_list[0].next == 0); }
+    bool is_empty() const { return (linked_list[0].next == 0); }
 
     const std::vector<int> &              get_answer() const  { return this->answer; }
 #if V1_SEARCH_ALL_STAGE
@@ -162,22 +162,22 @@ private:
     void init(const typename SudokuSolver::matrix_type & matrix) {
         int cols = (int)matrix.cols();
         for (int col = 0; col <= cols; col++) {
-            link_list[col].prev = col - 1;
-            link_list[col].next = col + 1;
-            link_list[col].up = col;
-            link_list[col].down = col;
+            linked_list[col].prev = col - 1;
+            linked_list[col].next = col + 1;
+            linked_list[col].up = col;
+            linked_list[col].down = col;
         }
-        link_list[0].prev = cols;
-        link_list[cols].next = 0;
+        linked_list[0].prev = cols;
+        linked_list[cols].next = 0;
 
-        init_from_martix(matrix);
+        init_from_matrix(matrix);
     }
 
-    void init_from_martix(const typename SudokuSolver::matrix_type & matrix) {
+    void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
         int rows = (int)matrix.rows();
         int cols = (int)matrix.cols();
         for (int row = rows - 1; row >= 0; row--) {
-            int head = free_idx, tail = free_idx;
+            int head = last_idx, tail = last_idx;
             for (int col = 0; col < cols; col++) {
                 if (matrix[row].test(col)) {
                     tail = this->insert(head, tail, row + 1, col + 1);
@@ -186,64 +186,67 @@ private:
         }
     }
 
+    int get_min_column() const {
+        int first = linked_list[0].next;
+        int min_col = col_size[first];
+        int min_col_index = first;
+        for (int i = linked_list[0].next; i != 0 ; i = linked_list[i].next) {
+            if (col_size[i] < min_col) {
+                min_col = col_size[i];
+                min_col_index = i;
+            }
+        }
+        return min_col_index;
+    }
+
 public:
     int insert(int head, int tail, int row, int col) {
-        link_list[free_idx].prev = tail;
-        link_list[free_idx].next = head;
-        link_list[free_idx].up = col;
-        link_list[free_idx].down = link_list[col].down;
-        link_list[free_idx].row = row;
-        link_list[free_idx].col = col;
-
+        linked_list[last_idx].prev = tail;
+        linked_list[last_idx].next = head;
+        linked_list[last_idx].up = col;
+        linked_list[last_idx].down = linked_list[col].down;
+        linked_list[last_idx].row = row;
+        linked_list[last_idx].col = col;
 #if 1
-        link_list[tail].next = free_idx;
-        link_list[head].prev = free_idx;
-        link_list[col].down = free_idx;
-        link_list[link_list[free_idx].down].up = free_idx;
+        linked_list[tail].next = last_idx;
+        linked_list[head].prev = last_idx;
+        linked_list[col].down = last_idx;
+        linked_list[linked_list[last_idx].down].up = last_idx;
 #else
-        link_list[link_list[free_idx].prev].next = free_idx;
-        link_list[link_list[free_idx].next].prev = free_idx;
-        link_list[link_list[free_idx].up].down = free_idx;
-        link_list[link_list[free_idx].down].up = free_idx;
+        linked_list[linked_list[last_idx].prev].next = last_idx;
+        linked_list[linked_list[last_idx].next].prev = last_idx;
+        linked_list[linked_list[last_idx].up].down = last_idx;
+        linked_list[linked_list[last_idx].down].up = last_idx;
 #endif
         col_size[col]++;
-        tail = free_idx++;
+        tail = last_idx++;
         return tail;
     }
 
-    void erase(int col) {
-        link_list[link_list[col].prev].next = link_list[col].next;
-        link_list[link_list[col].next].prev = link_list[col].prev;
+    void remove(int col) {
+        linked_list[linked_list[col].prev].next = linked_list[col].next;
+        linked_list[linked_list[col].next].prev = linked_list[col].prev;
 
-        for (int i = link_list[col].down; i != col; i = link_list[i].down) {
-            for (int j = link_list[i].next; j != i; j = link_list[j].next) {
-                link_list[link_list[j].up].down = link_list[j].down;
-                link_list[link_list[j].down].up = link_list[j].up;
-                col_size[link_list[j].col]--;
+        for (int i = linked_list[col].down; i != col; i = linked_list[i].down) {
+            for (int j = linked_list[i].next; j != i; j = linked_list[j].next) {
+                linked_list[linked_list[j].up].down = linked_list[j].down;
+                linked_list[linked_list[j].down].up = linked_list[j].up;
+                col_size[linked_list[j].col]--;
             }
         }
     }
 
-    void recover(int col) {
-        for (int i = link_list[col].up; i != col; i = link_list[i].up) {
-            for (int j = link_list[i].prev; j != i; j = link_list[j].prev) {
-                link_list[link_list[j].down].up = j;
-                link_list[link_list[j].up].down = j;
-                col_size[link_list[j].col]++;
+    void restore(int col) {
+        for (int i = linked_list[col].up; i != col; i = linked_list[i].up) {
+            for (int j = linked_list[i].prev; j != i; j = linked_list[j].prev) {
+                linked_list[linked_list[j].down].up = j;
+                linked_list[linked_list[j].up].down = j;
+                col_size[linked_list[j].col]++;
             }
         }
 
-        link_list[link_list[col].next].prev = col;
-        link_list[link_list[col].prev].next = col;
-    }
-
-    int get_min_column() const {
-        int min_col = link_list[0].next;
-        for (int i = link_list[0].next; i != 0 ; i = link_list[i].next) {
-            if (col_size[i] < col_size[min_col])
-                min_col = i;
-        }
-        return min_col;
+        linked_list[linked_list[col].next].prev = col;
+        linked_list[linked_list[col].prev].next = col;
     }
 
     bool solve() {
@@ -255,11 +258,12 @@ public:
         }
         
         int col = get_min_column();
-        this->erase(col);
-        for (int i = link_list[col].down; i != col; i = link_list[i].down) {
-            answer.push_back(link_list[i].row);
-            for (int j = link_list[i].next; j != i; j = link_list[j].next) {
-                this->erase(link_list[j].col);
+        assert(col > 0);
+        this->remove(col);
+        for (int i = linked_list[col].down; i != col; i = linked_list[i].down) {
+            this->answer.push_back(linked_list[i].row);
+            for (int j = linked_list[i].next; j != i; j = linked_list[j].next) {
+                this->remove(linked_list[j].col);
             }
 
             if (solve()) {
@@ -268,12 +272,12 @@ public:
 #endif
             }
 
-            for (int j = link_list[i].prev; j != i; j = link_list[j].prev) {
-                this->recover(link_list[j].col);
+            for (int j = linked_list[i].prev; j != i; j = linked_list[j].prev) {
+                this->restore(linked_list[j].col);
             }
-            answer.pop_back();
+            this->answer.pop_back();
         }
-        this->recover(col);
+        this->restore(col);
         return false;
     }
 
@@ -297,17 +301,18 @@ Search_Next:
                 }
 
                 col = get_min_column();
-                this->erase(col);
+                assert(col > 0);
+                this->remove(col);
 
-                i = link_list[col].down;
+                i = linked_list[col].down;
 
                 while (i != col) {
                     stack_info.set(col, i);
                     stack.push_back(stack_info);
-                    answer.push_back(link_list[i].row);
+                    this->answer.push_back(linked_list[i].row);
 
-                    for (int j = link_list[i].next; j != i; j = link_list[j].next) {
-                        this->erase(link_list[j].col);
+                    for (int j = linked_list[i].next; j != i; j = linked_list[j].next) {
+                        this->remove(linked_list[j].col);
                     }
 
                     // SearchNext
@@ -319,9 +324,9 @@ BackTracking_Retry:
                 while (i != col) {
                     stack_info.set(col, i);
                     stack.push_back(stack_info);
-                    answer.push_back(link_list[i].row);
-                    for (int j = link_list[i].next; j != i; j = link_list[j].next) {
-                        this->erase(link_list[j].col);
+                    this->answer.push_back(linked_list[i].row);
+                    for (int j = linked_list[i].next; j != i; j = linked_list[j].next) {
+                        this->remove(linked_list[j].col);
                     }
 
                     state = StackState::SearchNext;
@@ -331,23 +336,23 @@ BackTracking_Retry:
             else {
                 // StackState::BackTracking
 BackTracking_Entry:
-                answer.pop_back();
+                this->answer.pop_back();
                 stack_info = stack.back();
                 stack.pop_back();
                 i = stack_info.i;
                 col = stack_info.col;
 
-                for (int j = link_list[i].prev; j != i; j = link_list[j].prev) {
-                    this->recover(link_list[j].col);
+                for (int j = linked_list[i].prev; j != i; j = linked_list[j].prev) {
+                    this->restore(linked_list[j].col);
                 }
 
-                i = link_list[i].down;
+                i = linked_list[i].down;
 
                 state = StackState::BackTrackingRetry;
                 goto BackTracking_Retry;
             }
 
-            this->recover(col);
+            this->restore(col);
 
             if (stack.size() != 0) {
                 state = StackState::BackTracking;

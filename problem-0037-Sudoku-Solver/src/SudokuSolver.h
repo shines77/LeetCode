@@ -728,25 +728,39 @@ static void matrix3_copy(BitMatrix3<Depths, Rows, Cols> & dest,
     }
 }
 
-struct SudokuHelper {
-    static const size_t Rows = 9;
-    static const size_t Cols = 9;
-    static const size_t Palaces = 9;
-    static const size_t Numbers = 9;
+template <size_t nPalaceRows = 3, size_t nPalaceCols = 3,
+          size_t nPalaceCountX = 3, size_t nPalaceCountY = 3,
+          size_t nMinNumber = 1, size_t nMaxNumber = 9>
+struct BasicSudokuHelper {
+    static const size_t PalaceRows = nPalaceRows;       // 3
+    static const size_t PalaceCols = nPalaceCols;       // 3
+    static const size_t PalaceCountX = nPalaceCountX;   // 3
+    static const size_t PalaceCountY = nPalaceCountY;   // 3
+    static const size_t MinNumber = nMinNumber;         // 1
+    static const size_t MaxNumber = nMaxNumber;         // 9
+
+    static const size_t Rows = PalaceRows * PalaceCountY;
+    static const size_t Cols = PalaceCols * PalaceCountX;
+    static const size_t Palaces = PalaceCountX * PalaceCountY;
+    static const size_t Numbers = (MaxNumber - MinNumber) + 1;
+
+    static const size_t PalaceSize = PalaceRows * PalaceCols;
+    static const size_t BoardSize = Rows * Cols;
+    static const size_t TotalSize = PalaceSize * Palaces * Numbers;
 
     static void display_board(const std::vector<std::vector<char>> & board,
                               bool is_input = false,
                               int idx = -1) {
         int filled = 0;
-        for (size_t row = 0; row < Rows; row++) {
-            for (size_t col = 0; col < Cols; col++) {
+        for (size_t row = 0; row < board.size(); row++) {
+            const std::vector<char> & line = board[row];
+            for (size_t col = 0; col < line.size(); col++) {
                 if (board[row][col] != '.')
                     filled++;
             }
         }
 
         if (is_input) {
-            //printf("\n");
             printf("The input is: (filled = %d)\n", filled);
         }
         else {
@@ -756,23 +770,33 @@ struct SudokuHelper {
                 printf("The answer # %d is:\n", idx + 1);
         }
         printf("\n");
-        printf("  ------- ------- -------\n");
+        // printf("  ------- ------- -------\n");
+        printf(" ");
+        for (size_t countX = 0; countX < PalaceCountX; countX++) {
+            printf(" -------");
+        }
+        printf("\n");
         for (size_t row = 0; row < Rows; row++) {
+            assert(board.size() >= Rows);
             printf(" | ");
             for (size_t col = 0; col < Cols; col++) {
+                assert(board[row].size() >= Cols);
                 char val = board[row][col];
-                if (val == ' ' || val == '-')
-                    val = '.';
-                if (col < Cols - 1)
-                    printf("%c ", val);
+                if (val == ' ' || val == '0' || val == '-')
+                    printf(". ");
                 else
                     printf("%c ", val);
-                if ((col % 3) == 2)
+                if ((col % PalaceCols) == (PalaceCols - 1))
                     printf("| ");
             }
             printf("\n");
-            if ((row % 3) == 2) {
-                printf("  ------- ------- -------\n");
+            if ((row % PalaceRows) == (PalaceRows - 1)) {
+                // printf("  ------- ------- -------\n");
+                printf(" ");
+                for (size_t countX = 0; countX < PalaceCountX; countX++) {
+                    printf(" -------");
+                }
+                printf("\n");
             }
         }
         printf("\n");
@@ -787,6 +811,8 @@ struct SudokuHelper {
         }
     }
 };
+
+typedef BasicSudokuHelper<3, 3, 3, 3, 1, 9> SudokuHelper;
 
 } // namespace Problem_37
 } // namespace LeetCode

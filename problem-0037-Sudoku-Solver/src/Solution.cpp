@@ -161,7 +161,6 @@ int main(int argc, char * argv[])
 
     jtest::CPU::warmup(1000);
 
-#ifdef NDEBUG
     if (1)
     {
         printf("--------------------------------\n\n");
@@ -180,6 +179,7 @@ int main(int argc, char * argv[])
         solution.solveSudoku(board);
     }
 
+#ifdef NDEBUG
     if (1)
     {
         printf("--------------------------------\n\n");

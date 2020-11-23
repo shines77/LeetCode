@@ -25,7 +25,7 @@
   #define JSTD_IS_X86_64    1
   #define JSTD_WORD_SIZE    64
 #else
-  #if defined(WIN32) || defined(_WIN32) || defined(__i386__)
+  #if defined(WIN32) || defined(_WIN32) || defined (_M_IX86) || defined(__i386__)
     #define JSTD_IS_X86     1
     #define JSTD_IS_X86_32  1
   #endif
