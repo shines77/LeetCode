@@ -17,7 +17,6 @@ void SudokuSolver::display_answer(std::vector<std::vector<char>> & board,
     SudokuHelper::display_board(board);
 }
 
-#if V1_SEARCH_ALL_STAGE
 void SudokuSolver::display_answers(std::vector<std::vector<char>> & board,
                                    const DancingLinks * dancingLinks) {
     printf("Total answers: %d\n\n", (int)dancingLinks->get_answers().size());
@@ -30,7 +29,6 @@ void SudokuSolver::display_answers(std::vector<std::vector<char>> & board,
         i++;
     }
 }
-#endif
 
 void Solution::solveSudoku(std::vector<std::vector<char>> & board)
 {
@@ -47,10 +45,9 @@ void Solution::solveSudoku(std::vector<std::vector<char>> & board)
 
     sw.stop();
 
-#if V1_SEARCH_ALL_STAGE
-    solver.display_answers(board, &dancingLinks);
-#else
-    solver.display_answer(board, &dancingLinks);
-#endif
+    if (kSearchAllStages)
+        solver.display_answers(board, &dancingLinks);
+    else
+        solver.display_answer(board, &dancingLinks);
     printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
 }

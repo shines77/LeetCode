@@ -263,11 +263,11 @@ public:
 
         sw.stop();
 
-#if V4_SEARCH_ALL_STAGE
-        SudokuHelper::display_answers(this->answers);
-#else
-        SudokuHelper::display_board(board);
-#endif
+        if (kSearchAllStages)
+            SudokuHelper::display_answers(this->answers);
+        else
+            SudokuHelper::display_board(board);
+
         printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
                sw.getElapsedMillisec(), (uint32_t)recur_counter);
     }

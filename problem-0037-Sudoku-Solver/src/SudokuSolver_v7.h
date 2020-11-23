@@ -1021,11 +1021,10 @@ Find_Next_Step:
 
         sw.stop();
 
-#if V7_SEARCH_ALL_STAGE
-        SudokuHelper::display_answers(this->answers);
-#else
-        SudokuHelper::display_board(board);
-#endif
+        if (kSearchAllStages)
+            SudokuHelper::display_answers(this->answers);
+        else
+            SudokuHelper::display_board(board);
 
         printf("Elapsed time: %0.3f ms\n\n"
                "recur_counter: %u, end_recur_counter: %u\n\n",
