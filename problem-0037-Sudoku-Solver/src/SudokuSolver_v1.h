@@ -24,23 +24,44 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v1 {
 
+#if V1_SEARCH_ALL_STAGE
+static const bool kSearchAllStages = true;
+#else
+static const bool kSearchAllStages = false;
+#endif
+
 class DancingLinks;
 
 class SudokuSolver {
 public:
     static const size_t Rows = SudokuHelper::Rows;
     static const size_t Cols = SudokuHelper::Cols;
+    static const size_t Palaces = SudokuHelper::Palaces;
     static const size_t Numbers = SudokuHelper::Numbers;
 
-    static const size_t BoardSize = Rows * Cols * Numbers;
+    static const size_t TotalSize = Rows * Cols * Numbers;
 
-    typedef SmallBitMatrix<BoardSize, Rows * Cols * 4> matrix_type;
+    static const size_t TotalConditions0 = 0;
+    static const size_t TotalConditions1 = Rows * Cols;
+    static const size_t TotalConditions2 = Rows * Numbers;
+    static const size_t TotalConditions3 = Cols * Numbers;
+    static const size_t TotalConditions4 = Palaces * Numbers;
+
+    static const size_t TotalConditions01 = TotalConditions0  + TotalConditions1;
+    static const size_t TotalConditions02 = TotalConditions01 + TotalConditions2;
+    static const size_t TotalConditions03 = TotalConditions02 + TotalConditions3;
+    static const size_t TotalConditions04 = TotalConditions03 + TotalConditions4;
+
+    static const size_t TotalConditions =
+        TotalConditions1 + TotalConditions2 + TotalConditions3 + TotalConditions4;
+
+    typedef SmallBitMatrix<TotalSize, TotalConditions> matrix_type;
 
 private:
     matrix_type matrix;
-    size_t rows[BoardSize + 1];
-    size_t cols[BoardSize + 1];
-    size_t numbers[BoardSize + 1];
+    size_t rows[TotalSize + 1];
+    size_t cols[TotalSize + 1];
+    size_t numbers[TotalSize + 1];
 
 public:
     SudokuSolver(const std::vector<std::vector<char>> & board) {
@@ -48,55 +69,65 @@ public:
     }
     ~SudokuSolver() {}
 
-    matrix_type & getDlkMartix() {
-        return matrix;
+    matrix_type & getDlkMatrix() {
+        return this->matrix;
     }
 
-    const matrix_type & getDlkMartix() const {
-        return matrix;
+    const matrix_type & getDlkMatrix() const {
+        return this->matrix;
     }
 
 private:
     void init(const std::vector<std::vector<char>> & board) {
         size_t empties = 0;
-        for (size_t row = 0; row < Rows; row++) {
-            for (size_t col = 0; col < Cols; col++) {
-                if (board[row][col] == '.') {
+        for (size_t row = 0; row < board.size(); row++) {
+            const std::vector<char> & line = board[row];
+            for (size_t col = 0; col < line.size(); col++) {
+                if (line[col] == '.') {
                     empties++;
                 }
             }
         }
 
-        matrix.setRows(empties * 8 + 9 * 9);
+        // maxRows = filled * 1 + empties * 9;
+        //         = (9 * 9 - empties) * 1 + empties * 9;
+        //         = (9 * 9) + empties * 8;
+        size_t filled = Rows * Cols - empties;
+        size_t maxRows = filled * 1 +  empties * Numbers;
+        this->matrix.setRows(maxRows);
 
         size_t index = 0;
-        matrix.clear();
-        for (size_t row = 0; row < Rows; row++) {
-            for (size_t col = 0; col < Cols; col++) {
-                size_t m = 0, n = Numbers - 1;
-                if (board[row][col] != '.') {
-                    m = n = board[row][col] - '1';
+        this->matrix.clear();
+        assert(Rows == board.size());
+        for (size_t row = 0; row < board.size(); row++) {
+            const std::vector<char> & line = board[row];
+            assert(Cols == line.size());
+            for (size_t col = 0; col < line.size(); col++) {
+                size_t minNum = 0, maxNum = Numbers - 1;
+                if (line[col] != '.') {
+                    minNum = maxNum = line[col] - '1';
                 }
                 size_t palace = row / 3 * 3 + col / 3;
-                for (size_t number = m; number <= n; number++) {
+                for (size_t number = minNum; number <= maxNum; number++) {
 #if (MATRIX_BITSET_MODE == MATRIX_USE_SMALL_BITMAP) || (MATRIX_BITSET_MODE == MATRIX_USE_BITMAP)
-                    matrix[index].set(81 * 0 + row * 9 + col);
-                    matrix[index].set(81 * 1 + row * 9 + number);
-                    matrix[index].set(81 * 2 + col * 9 + number);
-                    matrix[index].set(81 * 3 + (row / 3 * 3 + col / 3) * 9 + number);
+                    this->matrix[index].set(81 * 0 + row * 9 + col);
+                    this->matrix[index].set(81 * 1 + row * 9 + number);
+                    this->matrix[index].set(81 * 2 + col * 9 + number);
+                    this->matrix[index].set(81 * 3 + (row / 3 * 3 + col / 3) * 9 + number);
 #else
-                    matrix[index][81 * 0 + row * 9 + col] = true;
-                    matrix[index][81 * 1 + row * 9 + number] = true;
-                    matrix[index][81 * 2 + col * 9 + number] = true;
-                    matrix[index][81 * 3 + palace * 9 + number] = true;
+                    this->matrix[index][0      + row * 9 + col] = true;
+                    this->matrix[index][81 * 1 + row * 9 + number] = true;
+                    this->matrix[index][81 * 2 + col * 9 + number] = true;
+                    this->matrix[index][81 * 3 + palace * 9 + number] = true;
 #endif
-                    rows[index + 1] = row;
-                    cols[index + 1] = col;
-                    numbers[index + 1] = number;
+                    this->rows[index + 1] = row;
+                    this->cols[index + 1] = col;
+                    this->numbers[index + 1] = number;
                     index++;
                 }
             }
         }
+        assert(index == maxRows);
     }
 
 public:
@@ -119,9 +150,8 @@ private:
     std::vector<int>    col_size;
     int                 last_idx;
     std::vector<int>    answer;
-#if V1_SEARCH_ALL_STAGE
+
     std::vector<std::vector<int>> answers;
-#endif
 
     struct StackInfo {
         int col;
@@ -154,9 +184,7 @@ public:
     bool is_empty() const { return (linked_list[0].next == 0); }
 
     const std::vector<int> &              get_answer() const  { return this->answer; }
-#if V1_SEARCH_ALL_STAGE
     const std::vector<std::vector<int>> & get_answers() const { return this->answers; }
-#endif
 
 private:
     void init(const typename SudokuSolver::matrix_type & matrix) {
@@ -166,6 +194,8 @@ private:
             linked_list[col].next = col + 1;
             linked_list[col].up = col;
             linked_list[col].down = col;
+            linked_list[col].row = 0;
+            linked_list[col].col = col;
         }
         linked_list[0].prev = cols;
         linked_list[cols].next = 0;
@@ -176,7 +206,8 @@ private:
     void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
         int rows = (int)matrix.rows();
         int cols = (int)matrix.cols();
-        for (int row = rows - 1; row >= 0; row--) {
+        //for (int row = rows - 1; row >= 0; row--) {
+        for (int row = 0; row < rows; row++) {
             int head = last_idx, tail = last_idx;
             for (int col = 0; col < cols; col++) {
                 if (matrix[row].test(col)) {
@@ -251,10 +282,10 @@ public:
 
     bool solve() {
         if (this->is_empty()) {
-#if V1_SEARCH_ALL_STAGE
-            this->answers.push_back(answer);
-#endif
-            return true;
+            if (kSearchAllStages)
+                this->answers.push_back(answer);
+            else
+                return true;
         }
         
         int col = get_min_column();
@@ -267,9 +298,8 @@ public:
             }
 
             if (solve()) {
-#if (V1_SEARCH_ALL_STAGE == 0)
-                return true;
-#endif
+                if (!kSearchAllStages)
+                    return true;
             }
 
             for (int j = linked_list[i].prev; j != i; j = linked_list[j].prev) {
@@ -291,13 +321,14 @@ public:
             if (state == StackState::SearchNext) {
 Search_Next:
                 if (this->is_empty()) {
-#if V1_SEARCH_ALL_STAGE
-                    this->answers.push_back(answer);
-                    state = StackState::BackTracking;
-                    goto BackTracking_Entry;
-#else
-                    return true;
-#endif
+                    if (kSearchAllStages) {
+                        this->answers.push_back(answer);
+                        state = StackState::BackTracking;
+                        goto BackTracking_Entry;
+                    }
+                    else {
+                        return true;
+                    }
                 }
 
                 col = get_min_column();

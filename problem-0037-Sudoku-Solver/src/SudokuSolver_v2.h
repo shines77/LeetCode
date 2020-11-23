@@ -24,7 +24,7 @@ namespace Problem_37 {
 namespace v2 {
 
 class Solution {
-public:
+private:
     std::bitset<9> getPossibleStatus(int x, int y)
     {
         return ~(rows[x] | cols[y] | cells[x / 3][y / 3]);
@@ -57,8 +57,11 @@ public:
     
     bool dfs(std::vector<std::vector<char>> & board, int cnt)
     {
-        if (cnt == 0)
+        if (cnt == 0) {
             return true;
+        }
+
+        recur_counter++;
 
         auto next = getNext(board);
         auto bits = getPossibleStatus(next[0], next[1]);
@@ -75,9 +78,11 @@ public:
         return false;
     }
 
+public:
     void solveSudoku(std::vector<std::vector<char>> & board) 
     {
         SudokuHelper::display_board(board, true);
+        recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
@@ -103,14 +108,19 @@ public:
         sw.stop();
 
         SudokuHelper::display_board(board);
-        printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+               sw.getElapsedMillisec(), (uint32_t)recur_counter);
     }
 
 private:
     std::vector<std::bitset<9>> rows;
     std::vector<std::bitset<9>> cols;
     std::vector<std::vector<std::bitset<9>>> cells;
+
+    static size_t recur_counter;
 };
+
+size_t Solution::recur_counter = 0;
 
 } // namespace v2
 } // namespace Problem_37

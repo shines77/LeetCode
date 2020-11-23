@@ -41,6 +41,7 @@ static const bool kSearchAllStages = true;
 #else
 static const bool kSearchAllStages = false;
 #endif
+
 static const bool kAllowFindInvalidIndex = false;
 
 // End game empties threshold
@@ -277,9 +278,7 @@ private:
     std::vector<MoveInfo> move_path;
 #endif
 
-#if V7_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
-#endif
 
 public:
     Solution() {
@@ -659,12 +658,10 @@ public:
     bool solve_end(std::vector<std::vector<char>> & board,
                    SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
-#if V7_SEARCH_ALL_STAGE
-            if (NeedSearchAllStages) {
+            if (NeedSearchAllStages)
                 this->answers.push_back(board);
-            }
-#endif
-            return true;
+            else
+                return true;
         }
 
         end_recur_counter++;
@@ -741,12 +738,10 @@ public:
                SmallFixedDualList<NumInfo, 81> & valid_nums,
                SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
-#if V7_SEARCH_ALL_STAGE
-            if (NeedSearchAllStages) {
+            if (NeedSearchAllStages)
                 this->answers.push_back(board);
-            }
-#endif
-            return true;
+            else
+                return true;
         }
 
         recur_counter++;

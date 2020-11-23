@@ -26,6 +26,12 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v4 {
 
+#if V4_SEARCH_ALL_STAGE
+static const bool kSearchAllStages = true;
+#else
+static const bool kSearchAllStages = false;
+#endif
+
 class Solution {
 public:
     static const size_t Rows = SudokuHelper::Rows;
@@ -51,9 +57,7 @@ private:
     SmallBitMatrix2<9, 9>  palaces;
     SmallBitMatrix2<81, 9> nums_usable;
 
-#if V4_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
-#endif
 
 public:
     Solution() = default;
@@ -187,10 +191,10 @@ public:
     bool solve(std::vector<std::vector<char>> & board,
                std::list<PosInfo> & valid_moves) {
         if (valid_moves.size() == 0) {
-#if V4_SEARCH_ALL_STAGE
-            this->answers.push_back(board);
-#endif
-            return true;
+            if (kSearchAllStages)
+                this->answers.push_back(board);
+            else
+                return true;
         }
 
         recur_counter++;
@@ -209,9 +213,8 @@ public:
                     board[row][col] = (char)(num + '1');
 
                     if (solve(board, valid_moves)) {
-#if (V4_SEARCH_ALL_STAGE == 0)
-                        return true;
-#endif
+                        if (!kSearchAllStages)
+                            return true;
                     }
 
                     board[row][col] = '.';

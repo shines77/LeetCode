@@ -26,6 +26,12 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v5 {
 
+#if V5_SEARCH_ALL_STAGE
+static const bool kSearchAllStages = true;
+#else
+static const bool kSearchAllStages = false;
+#endif
+
 template <typename T, size_t Capacity>
 class SmallFixedDualList {
 public:
@@ -166,9 +172,7 @@ private:
     SmallBitMatrix2<9, 9>  palaces;
     SmallBitMatrix2<81, 9> nums_usable;
 
-#if V5_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
-#endif
 
 public:
     Solution() = default;
@@ -299,10 +303,10 @@ public:
     bool solve(std::vector<std::vector<char>> & board,
                SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() == 1) {
-#if V5_SEARCH_ALL_STAGE
-            this->answers.push_back(board);
-#endif
-            return true;
+            if (kSearchAllStages)
+                this->answers.push_back(board);
+            else
+                return true;
         }
 
         recur_counter++;
@@ -320,9 +324,8 @@ public:
                     board[row][col] = (char)(num + '1');
 
                     if (solve(board, valid_moves)) {
-#if (V5_SEARCH_ALL_STAGE == 0)
-                        return true;
-#endif
+                        if (!kSearchAllStages)
+                            return true;
                     }
 
                     board[row][col] = '.';

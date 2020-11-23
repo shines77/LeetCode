@@ -41,7 +41,7 @@ void Solution::solveSudoku(std::vector<std::vector<char>> & board)
 
     SudokuSolver solver(board);
 
-    DancingLinks dancingLinks(solver.getDlkMartix(), SudokuSolver::BoardSize * 4 + 1);
+    DancingLinks dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
     //dancingLinks.solve_non_recursive();
     dancingLinks.solve();
 

@@ -26,6 +26,12 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v6 {
 
+#if V6_SEARCH_ALL_STAGE
+static const bool kSearchAllStages = true;
+#else
+static const bool kSearchAllStages = false;
+#endif
+
 template <typename T, size_t Capacity>
 class SmallFixedStack {
 public:
@@ -129,9 +135,7 @@ private:
     SmallBitMatrix2<9, 9>  palaces;
     SmallBitMatrix2<81, 9> nums_usable;
 
-#if V6_SEARCH_ALL_STAGE
     std::vector<std::vector<std::vector<char>>> answers;
-#endif
 
 public:
     Solution() = default;
@@ -261,10 +265,10 @@ public:
     bool solve(std::vector<std::vector<char>> & board,
                SmallFixedStack<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() == 0) {
-#if V6_SEARCH_ALL_STAGE
-            this->answers.push_back(board);
-#endif
-            return true;
+            if (kSearchAllStages)
+                this->answers.push_back(board);
+            else
+                return true;
         }
 
         recur_counter++;
@@ -282,9 +286,8 @@ public:
                     board[row][col] = (char)(num + '1');
 
                     if (solve(board, valid_moves)) {
-#if (V6_SEARCH_ALL_STAGE == 0)
-                        return true;
-#endif
+                        if (!kSearchAllStages)
+                            return true;
                     }
 
                     board[row][col] = '.';

@@ -29,6 +29,8 @@ public:
     static const size_t Cols = SudokuHelper::Cols;
     static const size_t Numbers = SudokuHelper::Numbers;
 
+    static size_t recur_counter;
+
 private:
     SmallBitMatrix2<9, 9>  rows;
     SmallBitMatrix2<9, 9>  cols;
@@ -179,6 +181,8 @@ public:
             return true;
         }
 
+        recur_counter++;
+
         size_t row, col;
         bool hasMoves = getNextFillCell(board, row, col);
         if (hasMoves) {
@@ -204,6 +208,7 @@ public:
 
     void solveSudoku(std::vector<std::vector<char>> & board) {
         SudokuHelper::display_board(board, true);
+        recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
@@ -238,9 +243,12 @@ public:
         sw.stop();
 
         SudokuHelper::display_board(board);
-        printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+               sw.getElapsedMillisec(), (uint32_t)recur_counter);
     }
 };
+
+size_t Solution::recur_counter = 0;
 
 } // namespace v3
 } // namespace Problem_37
