@@ -12,6 +12,7 @@
 #include <bitset>
 
 #include "SudokuSolver_v1.h"
+#include "SudokuSolver_v1a.h"
 #include "SudokuSolver_v2.h"
 #include "SudokuSolver_v3.h"
 #include "SudokuSolver_v4.h"
@@ -225,6 +226,18 @@ int main(int argc, char * argv[])
         make_sudoku_board(board, TEST_CASE_INDEX);
 
         v1::Solution solution;
+        solution.solveSudoku(board);
+    }
+
+    if (1)
+    {
+        printf("--------------------------------\n\n");
+        printf("SudokuSolver: v1a::Solution - Dancing Links\n\n");
+
+        std::vector<std::vector<char>> board;
+        make_sudoku_board(board, TEST_CASE_INDEX);
+
+        v1a::Solution solution;
         solution.solveSudoku(board);
     }
 

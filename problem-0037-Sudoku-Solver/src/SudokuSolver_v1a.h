@@ -1,6 +1,6 @@
 
-#ifndef LEETCODE_SUDOKU_SOLVER_V1_H
-#define LEETCODE_SUDOKU_SOLVER_V1_H
+#ifndef LEETCODE_SUDOKU_SOLVER_V1A_H
+#define LEETCODE_SUDOKU_SOLVER_V1A_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
@@ -18,13 +18,14 @@
 
 #include "SudokuSolver.h"
 
-#define V1_SEARCH_ALL_STAGE     0
+#define V1A_SEARCH_ALL_STAGE    0
+#define V1A_INSERT_MODE         1
 
 namespace LeetCode {
 namespace Problem_37 {
-namespace v1 {
+namespace v1a {
 
-#if V1_SEARCH_ALL_STAGE
+#if V1A_SEARCH_ALL_STAGE
 static const bool kSearchAllStages = true;
 #else
 static const bool kSearchAllStages = false;
@@ -59,12 +60,13 @@ public:
 
 private:
     matrix_type matrix;
+    size_t empties_;
     size_t rows[TotalSize + 1];
     size_t cols[TotalSize + 1];
     size_t numbers[TotalSize + 1];
 
 public:
-    SudokuSolver(const std::vector<std::vector<char>> & board) {
+    SudokuSolver(const std::vector<std::vector<char>> & board) : empties_(0) {
         this->init(board);
     }
     ~SudokuSolver() {}
@@ -75,6 +77,10 @@ public:
 
     const matrix_type & getDlkMatrix() const {
         return this->matrix;
+    }
+
+    size_t getEmpties() const {
+        return this->empties_;
     }
 
 private:
@@ -88,6 +94,8 @@ private:
                 }
             }
         }
+
+        this->empties_ = empties;
 
         // maxRows = filled * 1 + empties * 9;
         //         = (9 * 9 - empties) * 1 + empties * 9;
@@ -131,11 +139,13 @@ private:
     }
 
 public:
+    template <typename TDancingLinksX>
     void display_answer(std::vector<std::vector<char>> & board,
-                        const DancingLinks * dancingLinks);
+                        const TDancingLinksX * dancingLinks);
 
+    template <typename TDancingLinksX>
     void display_answers(std::vector<std::vector<char>> & board,
-                         const DancingLinks * dancingLinks);
+                         const TDancingLinksX * dancingLinks);
 };
 
 class DancingLinks {
@@ -148,8 +158,8 @@ private:
     
     std::vector<Node>   linked_list;
     std::vector<int>    col_size;
-    int                 last_idx;
     std::vector<int>    answer;
+    int                 last_idx;
 
     std::vector<std::vector<int>> answers;
 
@@ -201,51 +211,98 @@ private:
         linked_list[cols].next = 0;
 
         init_from_matrix(matrix);
+
+        this->answer.reserve(81);
     }
+
+#if (V1A_INSERT_MODE == 0)
 
     void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
         int rows = (int)matrix.rows();
         int cols = (int)matrix.cols();
         for (int row = rows - 1; row >= 0; row--) {
-        //for (int row = 0; row < rows; row++) {
-            int head = last_idx, tail = last_idx;
+            int first = last_idx;
+            int index = last_idx;
             for (int col = 0; col < cols; col++) {
                 if (matrix[row].test(col)) {
-                    tail = this->insert(head, tail, row + 1, col + 1);
+                    this->insert(index, row + 1, col + 1);
+                    index++;
                 }
             }
+            linked_list[index - 1].next = first;
+            linked_list[first].prev = index - 1;
+            last_idx = index;
         }
     }
 
-    int insert(int head, int tail, int row, int col) {
-        linked_list[last_idx].prev = tail;
-        linked_list[last_idx].next = head;
-        linked_list[last_idx].up = col;
-        linked_list[last_idx].down = linked_list[col].down;
-        linked_list[last_idx].row = row;
-        linked_list[last_idx].col = col;
+    void insert(int index, int row, int col) {
+        linked_list[index].prev = index - 1;
+        linked_list[index].next = index + 1;
+        linked_list[index].up = col;
+        linked_list[index].down = linked_list[col].down;
+        linked_list[index].row = row;
+        linked_list[index].col = col;
 #if 1
-        linked_list[tail].next = last_idx;
-        linked_list[head].prev = last_idx;
-        linked_list[col].down = last_idx;
-        linked_list[linked_list[last_idx].down].up = last_idx;
+        linked_list[col].down = index;
+        linked_list[linked_list[index].down].up = index;
 #else
-        linked_list[linked_list[last_idx].prev].next = last_idx;
-        linked_list[linked_list[last_idx].next].prev = last_idx;
-        linked_list[linked_list[last_idx].up].down = last_idx;
-        linked_list[linked_list[last_idx].down].up = last_idx;
+        linked_list[linked_list[index].up].down = index;
+        linked_list[linked_list[index].down].up = index;
 #endif
         col_size[col]++;
-        tail = last_idx++;
-        return tail;
     }
+
+#else // !(V1A_INSERT_MODE == 0)
+
+    void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
+        int rows = (int)matrix.rows();
+        int cols = (int)matrix.cols();
+        for (int row = 0; row < rows; row++) {
+            int first = last_idx;
+            int index = last_idx;
+            for (int col = 0; col < cols; col++) {
+                if (matrix[row].test(col)) {
+                    this->insert(index, row + 1, col + 1);
+                    index++;
+                }
+            }
+            linked_list[index - 1].next = first;
+            linked_list[first].prev = index - 1;
+            last_idx = index;
+        }
+    }
+
+    void insert(int index, int row, int col) {
+        linked_list[index].prev = index - 1;
+        linked_list[index].next = index + 1;
+        linked_list[index].up = linked_list[col].up;
+        linked_list[index].down = col;
+        linked_list[index].row = row;
+        linked_list[index].col = col;
+#if 1
+        linked_list[linked_list[index].up].down = index;
+        linked_list[linked_list[index].down].up = index;
+#else
+        linked_list[linked_list[index].up].down = index;
+        linked_list[linked_list[index].down].up = index;
+#endif
+        col_size[col]++;
+    }
+
+#endif // (V1A_INSERT_MODE == 0)
 
     int get_min_column() const {
         int first = linked_list[0].next;
         int min_col = col_size[first];
+        assert(min_col >= 0);
+        if (min_col <= 1)
+            return first;
         int min_col_index = first;
-        for (int i = linked_list[0].next; i != 0 ; i = linked_list[i].next) {
+        for (int i = linked_list[first].next; i != 0 ; i = linked_list[i].next) {
             if (col_size[i] < min_col) {
+                assert(col_size[i] >= 0);
+                if (col_size[i] <= 1)
+                    return i;
                 min_col = col_size[i];
                 min_col_index = i;
             }
@@ -255,44 +312,53 @@ private:
 
 public:
     void remove(int index) {
-        linked_list[linked_list[index].prev].next = linked_list[index].next;
-        linked_list[linked_list[index].next].prev = linked_list[index].prev;
+        assert(index > 0);
+        int prev = linked_list[index].prev;
+        int next = linked_list[index].next;
+        linked_list[prev].next = next;
+        linked_list[next].prev = prev;
 
         for (int row = linked_list[index].down; row != index; row = linked_list[row].down) {
             for (int col = linked_list[row].next; col != row; col = linked_list[col].next) {
-                linked_list[linked_list[col].up].down = linked_list[col].down;
-                linked_list[linked_list[col].down].up = linked_list[col].up;
+                int up = linked_list[col].up;
+                int down = linked_list[col].down;
+                linked_list[up].down = down;
+                linked_list[down].up = up;
+                assert(col_size[linked_list[col].col] > 0);
                 col_size[linked_list[col].col]--;
-                assert(col_size[linked_list[col].col] >= 0);
-                if (col_size[linked_list[col].col] == 0)
-                    col = col;
             }
         }
     }
 
     void restore(int index) {
+        assert(index > 0);
+        int next = linked_list[index].next;
+        int prev = linked_list[index].prev;
+        linked_list[next].prev = index;
+        linked_list[prev].next = index;
+
         for (int row = linked_list[index].up; row != index; row = linked_list[row].up) {
             for (int col = linked_list[row].prev; col != row; col = linked_list[col].prev) {
-                linked_list[linked_list[col].down].up = col;
-                linked_list[linked_list[col].up].down = col;
+                int down = linked_list[col].down;
+                int up = linked_list[col].up;
+                linked_list[down].up = col;
+                linked_list[up].down = col;
                 col_size[linked_list[col].col]++;
             }
         }
-
-        linked_list[linked_list[index].next].prev = index;
-        linked_list[linked_list[index].prev].next = index;
     }
 
     bool solve() {
         if (this->is_empty()) {
             if (kSearchAllStages)
-                this->answers.push_back(answer);
+                this->answers.push_back(this->answer);
             else
                 return true;
         }
         
         int index = get_min_column();
         assert(index > 0);
+
         this->remove(index);
         for (int row = linked_list[index].down; row != index; row = linked_list[row].down) {
             this->answer.push_back(linked_list[row].row);
@@ -311,6 +377,7 @@ public:
             this->answer.pop_back();
         }
         this->restore(index);
+
         return false;
     }
 
@@ -399,13 +466,192 @@ BackTracking_Entry:
     }
 };
 
+class DLX {
+private:
+    struct Node {
+        int prev, next;
+        int up, down;
+        int row, col;
+    };
+
+    std::vector<Node>   list_;
+    std::vector<int>    col_size;
+    std::vector<int>    answer_;
+    int                 last_idx;
+
+    std::vector<std::vector<int>> answers_;
+
+public:
+    DLX(typename SudokuSolver::matrix_type & matrix, size_t nodes)
+        : list_(nodes), col_size(matrix.cols() + 1), last_idx((int)matrix.cols() + 1) {
+        this->init(matrix);
+    }
+    ~DLX() {}
+
+    bool is_empty() const { return (list_[0].next == 0); }
+
+    const std::vector<int> &              get_answer() const  { return this->answer_; }
+    const std::vector<std::vector<int>> & get_answers() const { return this->answers_; }
+
+private:
+    void init(const typename SudokuSolver::matrix_type & matrix) {
+        int cols = (int)matrix.cols();
+        for (int col = 0; col <= cols; col++) {
+            list_[col].prev = col - 1;
+            list_[col].next = col + 1;
+            list_[col].up = col;
+            list_[col].down = col;
+            list_[col].row = 0;
+            list_[col].col = col;
+        }        
+        list_[0].prev = cols;
+        list_[cols].next = 0;
+
+        init_from_matrix(matrix);
+
+        this->answer_.resize(81);
+    }
+
+    void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
+        int rows = (int)matrix.rows();
+        int cols = (int)matrix.cols();
+        for (int row = 0; row < rows; row++) {
+            int first = last_idx;
+            int index = last_idx;
+            for (int col = 0; col < cols; col++) {
+                if (matrix[row].test(col)) {
+                    this->insert(index, row + 1, col + 1);
+                    index++;
+                }
+            }
+            list_[index - 1].next = first;
+            list_[first].prev = index - 1;
+            last_idx = index;
+        }
+    }
+
+    void insert(int index, int row, int col) {
+        list_[index].prev = index - 1;
+        list_[index].next = index + 1;
+        list_[index].up = list_[col].up;
+        list_[index].down = col;
+        list_[index].row = row;
+        list_[index].col = col;
+#if 1
+        list_[list_[index].up].down = index;
+        list_[col].up = index;
+#else
+        list_[list_[index].up].down = index;
+        list_[list_[index].down].up = index;
+#endif
+        col_size[col]++;
+    }
+
+    int get_min_column() const {
+        int first = list_[0].next;
+        int min_col = col_size[first];
+        assert(min_col >= 0);
+        if (min_col <= 1)
+            return first;
+        int min_col_index = first;
+        for (int i = list_[first].next; i != 0 ; i = list_[i].next) {
+            if (col_size[i] < min_col) {
+                assert(col_size[i] >= 0);
+                if (col_size[i] <= 1)
+                    return i;
+                min_col = col_size[i];
+                min_col_index = i;
+            }
+        }
+        return min_col_index;
+    }
+
+public:
+    void remove(int index) {
+        assert(index > 0);
+        int prev = list_[index].prev;
+        int next = list_[index].next;
+        list_[prev].next = next;
+        list_[next].prev = prev;
+
+        for(int row = list_[index].down; row != index; row = list_[row].down) {
+            for(int col = list_[row].next; col != row; col = list_[col].next) {
+                int up = list_[col].up;
+                int down = list_[col].down;
+                list_[up].down = down;
+                list_[down].up = up;
+                assert(col_size[list_[col].col] > 0);
+                col_size[list_[col].col]--;
+            }
+        }
+    }
+
+    void restore(int index) {
+        assert(index > 0);
+        int next = list_[index].next;
+        int prev = list_[index].prev;
+        list_[next].prev = index;
+        list_[prev].next = index;
+
+        for(int row = list_[index].up; row != index; row = list_[row].up) {
+            for(int col = list_[row].prev; col != row; col = list_[col].prev) {
+                int down = list_[col].down;
+                int up = list_[col].up;
+                list_[down].up = col;
+                list_[up].down = col;
+                col_size[list_[col].col]++;
+            }
+        }
+    }
+
+    bool search(size_t depth) {
+        if (this->is_empty()) {
+            if (kSearchAllStages)
+                this->answers_.push_back(this->answer_);
+            else
+                return true;
+        }
+
+        int index = get_min_column();
+        assert(index > 0);
+
+        this->remove(index);
+        for (int row = list_[index].down; row != index; row = list_[row].down) {
+            this->answer_[depth] = list_[row].row;
+            for (int col = list_[row].next; col != row; col = list_[col].next) {
+                this->remove(list_[col].col);
+            }
+
+            if (this->search(depth + 1)) {
+                if (!kSearchAllStages)
+                    return true;
+            }
+
+            for (int col = list_[row].prev; col != row; col = list_[col].prev) {
+                this->restore(list_[col].col);
+            }
+            //this->answer_[depth] = 0;
+        }
+        this->restore(index);
+
+        return false;
+    }
+
+    bool solve() {
+        if (!this->search(0)) {
+            return false;
+        }
+        return true;
+    }
+};
+
 class Solution {
 public:
     void solveSudoku(std::vector<std::vector<char>> & board);
 };
 
-} // namespace v1
+} // namespace v1a
 } // namespace Problem_37
 } // namespace LeetCode
 
-#endif // LEETCODE_SUDOKU_SOLVER_V1_H
+#endif // LEETCODE_SUDOKU_SOLVER_V1A_H

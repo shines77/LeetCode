@@ -25,6 +25,7 @@
     <ClInclude Include="src\StopWatch.h" />
     <ClInclude Include="src\SudokuSolver.h" />
     <ClInclude Include="src\SudokuSolver_v1.h" />
+    <ClInclude Include="src\SudokuSolver_v1a.h" />
     <ClInclude Include="src\SudokuSolver_v2.h" />
     <ClInclude Include="src\SudokuSolver_v3.h" />
     <ClInclude Include="src\SudokuSolver_v4.h" />
@@ -37,6 +38,7 @@
     <ClCompile Include="src\ice_sudoku_solver.c" />
     <ClCompile Include="src\Solution.cpp" />
     <ClCompile Include="src\SudokuSolver_v1.cpp" />
+    <ClCompile Include="src\SudokuSolver_v1a.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F2F70B48-CBE9-4CC1-817D-17A15DE85D5D}</ProjectGuid>
