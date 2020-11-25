@@ -647,7 +647,7 @@ public:
 
 class Solution {
 public:
-    void solveSudoku(std::vector<std::vector<char>> & board);
+    double solveSudoku(std::vector<std::vector<char>> & board, bool verbose = true);
 };
 
 } // namespace v1a

@@ -136,11 +136,11 @@ public:
 private:
     size_t           size_;
     size_t           capacity_;
-    node_type        data_[kCapacity];
+    node_type        list_[kCapacity];
 
     void init() {
-        this->data_[0].prev = 0;
-        this->data_[0].next = 1;
+        this->list_[0].prev = 1;
+        this->list_[0].next = 1;
     }
 
 public:
@@ -149,11 +149,11 @@ public:
     }
     ~SmallFixedDualList() {}
 
-    int begin() const { return this->data_[0].next; }
+    int begin() const { return this->list_[0].next; }
     int end() const   { return 0; }
 
     int next(int index) const {
-        return this->data_[index].next;
+        return this->list_[index].next;
     }
 
     size_t size() const { return this->size_; }
@@ -162,27 +162,27 @@ public:
 
     void init_all() {
         for (int i = 0; i < this_type::kCapacity; i++) {
-            this->data_[i].prev = i - 1;
-            this->data_[i].next = i + 1;
+            this->list_[i].prev = i - 1;
+            this->list_[i].next = i + 1;
         }
-        this->data_[0] = this_type::kCapacity - 1;
-        this->data_[this_type::kCapacity - 1].next = 0;
+        this->list_[0] = this_type::kCapacity - 1;
+        this->list_[this_type::kCapacity - 1].next = 0;
     }
 
     void finalize() {
-        this->data_[0].prev = (int)(this->size_ - 1);
-        this->data_[this->size_ - 1].next = 0;
+        this->list_[0].prev = (int)(this->size_ - 1);
+        this->list_[this->size_ - 1].next = 0;
         this->capacity_ = this->size_ + 1;
     }
 
     int find(const value_type & key) {
-        int index = this->data_[0].next;
+        int index = this->list_[0].next;
         while (index != 0) {
-            const value_type & value = this->data_[index].value;
+            const value_type & value = this->list_[index].value;
             if (key == value) {
                 return index;
             }
-            index = this->data_[index].next;
+            index = this->list_[index].next;
         }
         return index;
     }
@@ -192,9 +192,9 @@ public:
         assert(index > 0);
         assert(index < this->max_capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[index].prev = index - 1;
-        this->data_[index].next = index + 1;
-        new (&(this->data_[index].value)) value_type(std::forward<Args>(args)...);
+        this->list_[index].prev = index - 1;
+        this->list_[index].next = index + 1;
+        new (&(this->list_[index].value)) value_type(std::forward<Args>(args)...);
         this->size_++;
     }
 
@@ -203,9 +203,9 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        node_type & node = this->data_[index];
-        this->data_[node.prev].next = node.next;
-        this->data_[node.next].prev = node.prev;
+        node_type & node = this->list_[index];
+        this->list_[node.prev].next = node.next;
+        this->list_[node.next].prev = node.prev;
         assert(this->size_ > 0);
         this->size_--;
     }
@@ -215,10 +215,10 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[index].prev = 0;
-        this->data_[index].next = this->data_[0].next;
-        this->data_[this->data_[0].next].prev = index;
-        this->data_[0].next = index;
+        this->list_[index].prev = 0;
+        this->list_[index].next = this->list_[0].next;
+        this->list_[this->list_[0].next].prev = index;
+        this->list_[0].next = index;
         this->size_++;
     }
 
@@ -227,22 +227,22 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        node_type & node = this->data_[index];
-        this->data_[node.next].prev = index;
-        this->data_[node.prev].next = index;
+        node_type & node = this->list_[index];
+        this->list_[node.next].prev = index;
+        this->list_[node.prev].next = index;
         this->size_++;
     }
 
     value_type & operator [] (int index) {
         assert(index < this->capacity());
         assert(index < this->max_capacity());
-        return this->data_[index].value;
+        return this->list_[index].value;
     };
 
     const value_type & operator [] (int index) const {
         assert(index < this->capacity());
         assert(index < this->max_capacity());
-        return this->data_[index].value;
+        return this->list_[index].value;
     };
 };
 
@@ -320,6 +320,7 @@ private:
     SmallBitMatrix2<9, 9>    rows;          // [row][num]
     SmallBitMatrix2<9, 9>    cols;          // [col][num]
     SmallBitMatrix2<9, 9>    palaces;       // [palace][num]
+    SmallBitMatrix2<9, 9>    cell_filled;   // [row][col]
     SmallBitMatrix2<81, 9>   nums_usable;   // [row * 9 + col][num]
 
     //SmallBitMatrix3<9, 9, 3> palace_rows;   // [palace][num][row]
@@ -386,7 +387,7 @@ public:
         }
     }
 
-    int getNextFillCell(SmallFixedDualList<PosInfo, 81> & valid_moves) {
+    int getNextFillCell(SmallFixedDualList<PosInfo, 82> & valid_moves) {
         assert(valid_moves.size() > 1);
 
         int min_index = -1;
@@ -412,8 +413,8 @@ public:
         return min_index;
     }
 
-    int getNextFillCell(SmallFixedDualList<NumInfo, 81> & valid_nums,
-                        SmallFixedDualList<PosInfo, 81> & valid_moves,
+    int getNextFillCell(SmallFixedDualList<NumInfo, 82> & valid_nums,
+                        SmallFixedDualList<PosInfo, 82> & valid_moves,
                         int & out_move_type) {
         assert(valid_nums.size() > 1);
         assert(valid_moves.size() > 1);
@@ -477,11 +478,28 @@ public:
         return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
     }
 
+    std::bitset<9> getUsableStrict(size_t row, size_t col) {
+        if (!this->cell_filled[row].test(col)) {
+            size_t palace = row / 3 * 3 + col / 3;
+            return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
+        }
+        else {
+            return 0;
+        }
+    }
+
+    std::bitset<9> getUsableStrict(size_t row, size_t col, size_t palace) {
+        if (!this->cell_filled[row].test(col))
+            return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
+        else
+            return 0;
+    }
+
     template <bool isEndGame>
     void updateUsable(size_t row, size_t col, size_t num) {
         size_t cell_y = row * 9;
         for (size_t x = 0; x < Cols; x++) {
-            if (true || (x != col)) {
+            if (false || (x != col)) {
                 this->nums_usable[cell_y + x].reset(num);
             }
         }
@@ -612,6 +630,8 @@ public:
             }
             pos += (9 - 3);
         }
+
+        this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>
@@ -620,8 +640,10 @@ public:
         size_t palace_row = row / 3 * 3;
         for (size_t x = 0; x < Cols; x++) {
             if (isUndo || (x != col)) {
-                size_t palace = palace_row + x / 3;
-                this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+                if (!this->cell_filled[row].test(x)) {
+                    size_t palace = palace_row + x / 3;
+                    this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+                }
             }
         }
 
@@ -629,8 +651,10 @@ public:
         size_t palace_col = col / 3;
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
-                size_t palace = y / 3 * 3 + palace_col;
-                this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                if (!this->cell_filled[y].test(col)) {
+                    size_t palace = y / 3 * 3 + palace_col;
+                    this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                }
             }
         }
 
@@ -641,7 +665,9 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    if (!this->cell_filled[palace_row + y].test(palace_col + x)) {
+                        this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    }
                 }
                 pos++;
             }
@@ -688,6 +714,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
+        this->cell_filled[row].set(col);
     }
 
     template <bool isEndGame = false>
@@ -696,6 +723,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
+        this->cell_filled[row].set(col);
         updateUsable<isEndGame>(row, col, num);
 #if V8_USE_MOVE_PATH
         this->move_path.push_back(MoveInfo((uint32_t)row, (uint32_t)col, (uint32_t)(num + 1)));
@@ -708,6 +736,7 @@ public:
         this->rows[row].reset(num);
         this->cols[col].reset(num);
         this->palaces[palace].reset(num);
+        this->cell_filled[row].reset(col);
         updateUndoUsable<true>(row, col, num);
 #if V8_USE_MOVE_PATH
         this->move_path.pop_back();
@@ -754,7 +783,7 @@ public:
 
     template <bool NeedSearchAllStages = false>
     bool solve_end(size_t depth, std::vector<std::vector<char>> & board,
-                   SmallFixedDualList<PosInfo, 81> & valid_moves) {
+                   SmallFixedDualList<PosInfo, 82> & valid_moves) {
         if (valid_moves.size() <= 1) {
             if (NeedSearchAllStages)
                 this->answers.push_back(board);
@@ -778,7 +807,7 @@ public:
             assert(num_count != 0);
             if (num_count == 1) {
                 size_t numBits = validNums.to_ullong();
-                size_t num = jstd::bitscan::bsf(numBits);
+                size_t num = jstd::BitScan::bsf(numBits);
                 doFillNum<true>(row, col, num);
                 debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
 
@@ -828,8 +857,8 @@ public:
 
     template <bool NeedSearchAllStages = false>
     bool solve(size_t depth, std::vector<std::vector<char>> & board,
-               SmallFixedDualList<NumInfo, 81> & valid_nums,
-               SmallFixedDualList<PosInfo, 81> & valid_moves) {
+               SmallFixedDualList<NumInfo, 82> & valid_nums,
+               SmallFixedDualList<PosInfo, 82> & valid_moves) {
         if (valid_moves.size() <= 1) {
             if (NeedSearchAllStages)
                 this->answers.push_back(board);
@@ -844,7 +873,7 @@ public:
         if (move_idx > 0) {
             if (move_type == MoveType::ByPalaceNumber) {
                 debug_trace(">>>> [depth = %d] valid_nums .remove(move_idx  = %d);\n\n",
-                    (int)depth, move_idx);
+                            (int)depth, move_idx);
 
                 size_t palace = valid_nums[move_idx].palace;
                 size_t num    = valid_nums[move_idx].num;
@@ -991,16 +1020,19 @@ public:
         return false;
     }
 
-    void solveSudoku(std::vector<std::vector<char>> & board) {
-        SudokuHelper::display_board(board, true);
+    double solveSudoku(std::vector<std::vector<char>> & board, bool verbose = true) {
+        double elapsed_time;
+        if (verbose) {
+            SudokuHelper::display_board(board, true);
+        }
         recur_counter = 0;
         end_recur_counter = 0;
 
         jtest::StopWatch sw;
         sw.start();
 
-        SmallFixedDualList<NumInfo, 81> valid_nums;
-        SmallFixedDualList<PosInfo, 81> valid_moves;
+        SmallFixedDualList<NumInfo, 82> valid_nums;
+        SmallFixedDualList<PosInfo, 82> valid_moves;
 
         int index = 1;
         for (size_t row = 0; row < board.size(); row++) {
@@ -1062,6 +1094,10 @@ Find_Next_Step:
                         doFillNum<false>(row, col, num);
                         board[row][col] = (char)(num + '1');
                         valid_moves.remove(index);
+                        //size_t palace = row / 3 * 3 + col / 3;
+                        //int num_index = this->palace_num_index[palace * 9 + num];
+                        //assert(num_index > 0);
+                        //valid_nums.remove(num_index);
                         goto Find_Next_Step;
                     }
                 }
@@ -1083,7 +1119,10 @@ Find_Next_Step:
                             doFillNum<false>(row, col, num);
                             board[row][col] = (char)(num + '1');
 
-                            //int move_index = valid_moves.find(PosInfo((uint32_t)row, (uint32_t)col));
+                            //int num_index = this->palace_num_index[palace * 9 + num];
+                            //assert(num_index > 0);
+                            //valid_nums.remove(num_index);
+
                             int move_index = this->row_col_index[row * 9 + col];
                             assert (move_index > 0);
                             valid_moves.remove(move_index);
@@ -1097,33 +1136,40 @@ Find_Next_Step:
         int num_index = 1;
         for (size_t palace = 0; palace < SudokuHelper::Palaces; palace++) {
             for (size_t num = 0; num < SudokuHelper::Numbers; num++) {
-                size_t palace_pos = palace * 9 + num;
+                size_t palace_num = palace * 9 + num;
                 size_t pos_count = this->palace_nums[palace][num].count();
-                if (pos_count > 1) {
-                    this->palace_num_index[palace_pos] = num_index;
+                if (pos_count > 0) {
+                    this->palace_num_index[palace_num] = num_index;
                     valid_nums.insert(num_index, palace, num);
                     num_index++;
                 }
                 else {
-                    this->palace_num_index[palace_pos] = -1;
+                    this->palace_num_index[palace_num] = -1;
                 }
             }
         }
         valid_nums.finalize();
 
+        assert(valid_moves.size() == valid_nums.size());
+
         this->solve<kSearchAllStages>(0, board, valid_nums, valid_moves);
 
         sw.stop();
+        elapsed_time = sw.getElapsedMillisec();
 
-        if (kSearchAllStages)
-            SudokuHelper::display_answers(this->answers);
-        else
-            SudokuHelper::display_board(board);
+        if (verbose) {
+            if (kSearchAllStages)
+                SudokuHelper::display_answers(this->answers);
+            else
+                SudokuHelper::display_board(board);
 
-        printf("Elapsed time: %0.3f ms\n\n"
-               "recur_counter: %u, end_recur_counter: %u\n\n",
-               sw.getElapsedMillisec(), (uint32_t)recur_counter,
-               (uint32_t)end_recur_counter);
+            printf("Elapsed time: %0.3f ms\n\n"
+                   "recur_counter: %u, end_recur_counter: %u\n\n",
+                   sw.getElapsedMillisec(), (uint32_t)recur_counter,
+                   (uint32_t)end_recur_counter);
+        }
+
+        return elapsed_time;
     }
 };
 

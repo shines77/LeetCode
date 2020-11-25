@@ -34,9 +34,12 @@ void SudokuSolver::display_answers(std::vector<std::vector<char>> & board,
     }
 }
 
-void Solution::solveSudoku(std::vector<std::vector<char>> & board)
+double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbose)
 {
-    SudokuHelper::display_board(board, true);
+    double elapsed_time;
+    if (verbose) {
+        SudokuHelper::display_board(board, true);
+    }
 
     jtest::StopWatch sw;
     sw.start();
@@ -53,10 +56,15 @@ void Solution::solveSudoku(std::vector<std::vector<char>> & board)
 #endif
 
     sw.stop();
+    elapsed_time = sw.getElapsedMillisec();
 
-    if (kSearchAllStages)
-        solver.display_answers(board, &dancingLinks);
-    else
-        solver.display_answer(board, &dancingLinks);
-    printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+    if (verbose) {
+        if (kSearchAllStages)
+            solver.display_answers(board, &dancingLinks);
+        else
+            solver.display_answer(board, &dancingLinks);
+        printf("Elapsed time: %0.3f ms\n\n", elapsed_time);
+    }
+
+    return elapsed_time;
 }

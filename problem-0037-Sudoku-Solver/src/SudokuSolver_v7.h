@@ -75,11 +75,11 @@ public:
 private:
     size_t           size_;
     size_t           capacity_;
-    node_type        data_[kCapacity];
+    node_type        list_[kCapacity];
 
     void init() {
-        this->data_[0].prev = 0;
-        this->data_[0].next = 1;
+        this->list_[0].prev = 1;
+        this->list_[0].next = 1;
     }
 
 public:
@@ -88,11 +88,11 @@ public:
     }
     ~SmallFixedDualList() {}
 
-    int begin() const { return this->data_[0].next; }
+    int begin() const { return this->list_[0].next; }
     int end() const   { return 0; }
 
     int next(int index) const {
-        return this->data_[index].next;
+        return this->list_[index].next;
     }
 
     size_t size() const { return this->size_; }
@@ -101,27 +101,27 @@ public:
 
     void init_all() {
         for (int i = 0; i < this_type::kCapacity; i++) {
-            this->data_[i].prev = i - 1;
-            this->data_[i].next = i + 1;
+            this->list_[i].prev = i - 1;
+            this->list_[i].next = i + 1;
         }
-        this->data_[0] = this_type::kCapacity - 1;
-        this->data_[this_type::kCapacity - 1].next = 0;
+        this->list_[0] = this_type::kCapacity - 1;
+        this->list_[this_type::kCapacity - 1].next = 0;
     }
 
     void finalize() {
-        this->data_[0].prev = (int)(this->size_ - 1);
-        this->data_[this->size_ - 1].next = 0;
+        this->list_[0].prev = (int)(this->size_ - 1);
+        this->list_[this->size_ - 1].next = 0;
         this->capacity_ = this->size_ + 1;
     }
 
     int find(const value_type & key) {
-        int index = this->data_[0].next;
+        int index = this->list_[0].next;
         while (index != 0) {
-            const value_type & value = this->data_[index].value;
+            const value_type & value = this->list_[index].value;
             if (key == value) {
                 return index;
             }
-            index = this->data_[index].next;
+            index = this->list_[index].next;
         }
         return index;
     }
@@ -131,9 +131,9 @@ public:
         assert(index > 0);
         assert(index < this->max_capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[index].prev = index - 1;
-        this->data_[index].next = index + 1;
-        new (&(this->data_[index].value)) value_type(std::forward<Args>(args)...);
+        this->list_[index].prev = index - 1;
+        this->list_[index].next = index + 1;
+        new (&(this->list_[index].value)) value_type(std::forward<Args>(args)...);
         this->size_++;
     }
 
@@ -142,9 +142,9 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        node_type & node = this->data_[index];
-        this->data_[node.prev].next = node.next;
-        this->data_[node.next].prev = node.prev;
+        node_type & node = this->list_[index];
+        this->list_[node.prev].next = node.next;
+        this->list_[node.next].prev = node.prev;
         assert(this->size_ > 0);
         this->size_--;
     }
@@ -154,10 +154,10 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        this->data_[index].prev = 0;
-        this->data_[index].next = this->data_[0].next;
-        this->data_[this->data_[0].next].prev = index;
-        this->data_[0].next = index;
+        this->list_[index].prev = 0;
+        this->list_[index].next = this->list_[0].next;
+        this->list_[this->list_[0].next].prev = index;
+        this->list_[0].next = index;
         this->size_++;
     }
 
@@ -166,22 +166,22 @@ public:
         assert(index < this->capacity());
         assert(this->size_ < this->capacity());
         assert(this->size_ < this->max_capacity());
-        node_type & node = this->data_[index];
-        this->data_[node.next].prev = index;
-        this->data_[node.prev].next = index;
+        node_type & node = this->list_[index];
+        this->list_[node.next].prev = index;
+        this->list_[node.prev].next = index;
         this->size_++;
     }
 
     value_type & operator [] (int index) {
         assert(index < this->capacity());
         assert(index < this->max_capacity());
-        return this->data_[index].value;
+        return this->list_[index].value;
     };
 
     const value_type & operator [] (int index) const {
         assert(index < this->capacity());
         assert(index < this->max_capacity());
-        return this->data_[index].value;
+        return this->list_[index].value;
     };
 };
 
@@ -259,6 +259,7 @@ private:
     SmallBitMatrix2<9, 9>    rows;          // [row][num]
     SmallBitMatrix2<9, 9>    cols;          // [col][num]
     SmallBitMatrix2<9, 9>    palaces;       // [palace][num]
+    SmallBitMatrix2<9, 9>    cell_filled;   // [row][col]
     SmallBitMatrix2<81, 9>   nums_usable;   // [row * 9 + col][num]
 
     //SmallBitMatrix3<9, 9, 3> palace_rows;   // [palace][num][row]
@@ -414,11 +415,28 @@ public:
         return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
     }
 
+    std::bitset<9> getUsableStrict(size_t row, size_t col) {
+        if (!this->cell_filled[row].test(col)) {
+            size_t palace = row / 3 * 3 + col / 3;
+            return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
+        }
+        else {
+            return 0;
+        }
+    }
+
+    std::bitset<9> getUsableStrict(size_t row, size_t col, size_t palace) {
+        if (!this->cell_filled[row].test(col))
+            return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
+        else
+            return 0;
+    }
+
     template <bool isEndGame>
     void updateUsable(size_t row, size_t col, size_t num) {
         size_t cell_y = row * 9;
         for (size_t x = 0; x < Cols; x++) {
-            if (true || (x != col)) {
+            if (false || (x != col)) {
                 this->nums_usable[cell_y + x].reset(num);
             }
         }
@@ -552,6 +570,8 @@ public:
             }
             pos += (9 - 3);
         }
+
+        this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>
@@ -560,8 +580,10 @@ public:
         size_t palace_row = row / 3 * 3;
         for (size_t x = 0; x < Cols; x++) {
             if (isUndo || (x != col)) {
-                size_t palace = palace_row + x / 3;
-                this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+                if (!this->cell_filled[row].test(x)) {
+                    size_t palace = palace_row + x / 3;
+                    this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+                }
             }
         }
 
@@ -569,8 +591,10 @@ public:
         size_t palace_col = col / 3;
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
-                size_t palace = y / 3 * 3 + palace_col;
-                this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                if (!this->cell_filled[y].test(col)) {
+                    size_t palace = y / 3 * 3 + palace_col;
+                    this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                }
             }
         }
 
@@ -581,7 +605,9 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    if (!this->cell_filled[palace_row + y].test(palace_col + x)) {
+                        this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    }
                 }
                 pos++;
             }
@@ -685,7 +711,7 @@ public:
             assert(num_count != 0);
             if (num_count == 1) {
                 size_t numBits = validNums.to_ullong();
-                size_t num = jstd::bitscan::bsf(numBits);
+                size_t num = jstd::BitScan::bsf(numBits);
                 doFillNum<true>(row, col, num);
                 debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
 

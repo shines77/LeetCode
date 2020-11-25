@@ -1,0 +1,9 @@
+
+Windows:
+
+.\SudokuSolver.exe ..\..\puzzles\sudoku17.txt
+
+Linux:
+
+SudokuSolver.exe ./puzzles/sudoku17.txt
+

@@ -128,6 +128,8 @@ public:
             }
             pos += (9 - 3);
         }
+
+        this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>

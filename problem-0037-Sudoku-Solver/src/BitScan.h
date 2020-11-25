@@ -59,7 +59,7 @@ typedef int             ssize_t;
 typedef unsigned int    size_t;
 #endif
 
-struct bitscan {
+struct BitScan {
 
     //
     // popcount() algorithm
@@ -241,42 +241,42 @@ struct bitscan {
     static inline
     int bsf32(unsigned int x) {
         assert(x != 0);
-        return bitscan::__internal_ctz(x);
+        return BitScan::__internal_ctz(x);
     }
 
     static inline
     int bsf64(unsigned long long x) {
         assert(x != 0);
-        return bitscan::__internal_ctzll(x);
+        return BitScan::__internal_ctzll(x);
     }
 
     static inline
     int bsr32(unsigned int x) {
         assert(x != 0);
-        return bitscan::__internal_clz(x);
+        return BitScan::__internal_clz(x);
     }
 
     static inline
     int bsr64(unsigned long long x) {
         assert(x != 0);
-        return bitscan::__internal_clzll(x);
+        return BitScan::__internal_clzll(x);
     }
 
 #endif // (_MSC_VER && _MSC_VER >= 1500)
 
     static inline int bsf(size_t x) {
 #if (JSTD_WORD_SIZE == 64)
-        return bitscan::bsf64(x);
+        return BitScan::bsf64(x);
 #else
-        return bitscan::bsf32(x);
+        return BitScan::bsf32(x);
 #endif
     }
 
     static inline int bsr(size_t x) {
 #if (JSTD_WORD_SIZE == 64)
-        return bitscan::bsr64(x);
+        return BitScan::bsr64(x);
 #else
-        return bitscan::bsr32(x);
+        return BitScan::bsr32(x);
 #endif
     }
 

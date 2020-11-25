@@ -18,6 +18,7 @@
 #include <bitset>
 
 #include "SudokuSolver.h"
+#include "BitScan.h"
 #include "StopWatch.h"
 
 #define V6_SEARCH_ALL_STAGE     0
@@ -43,7 +44,7 @@ public:
 private:
     int             head_;
     int             capacity_;
-    value_type      data_[kCapacity];
+    value_type      list_[kCapacity];
 
 public:
     SmallFixedStack() : head_(0), capacity_(0) {
@@ -72,12 +73,24 @@ public:
         assert(this->capacity_ >= 1);
     }
 
+    int find(const value_type & key) {
+        int index = this->begin();
+        while (index != this->end()) {
+            const value_type & value = this->list_[index];
+            if (key == value) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
     template <typename ... Args>
     void insert(int index, Args && ... args) {
         assert(index >= 0);
         assert(index < this->max_capacity());
         assert(this->capacity_ < this->max_capacity());
-        new (&(this->data_[index])) value_type(std::forward<Args>(args)...);
+        new (&(this->list_[index])) value_type(std::forward<Args>(args)...);
         this->capacity_++;
     }
 
@@ -102,13 +115,13 @@ public:
 
     void swap(int index1, int index2) {
         assert(index1 != index2);
-        std::swap(this->data_[index1], this->data_[index2]);
+        std::swap(this->list_[index1], this->list_[index2]);
     }
 
     const value_type & operator [] (int index) const {
         assert(index < this->capacity());
         assert(index < this->max_capacity());
-        return this->data_[index];
+        return this->list_[index];
     };
 };
 
@@ -127,13 +140,20 @@ public:
         PosInfo() = default;
         PosInfo(size_t row, size_t col) : row((uint32_t)row), col((uint32_t)col) {};
         ~PosInfo() = default;
+
+        bool operator == (const PosInfo & rhs) const {
+            return ((this->row == rhs.row) && (this->col == rhs.col));
+        }
     };
 
 private:
-    SmallBitMatrix2<9, 9>  rows;
-    SmallBitMatrix2<9, 9>  cols;
-    SmallBitMatrix2<9, 9>  palaces;
-    SmallBitMatrix2<81, 9> nums_usable;
+    SmallBitMatrix2<9, 9>  rows;        // [row][num]
+    SmallBitMatrix2<9, 9>  cols;        // [col][num]
+    SmallBitMatrix2<9, 9>  palaces;     // [palace][num]
+    SmallBitMatrix2<9, 9>  cell_filled; // [row][col]
+    SmallBitMatrix2<81, 9> nums_usable; // [row * 9 + col][num]
+
+    uint8_t row_col_index[88];
 
     std::vector<std::vector<std::vector<char>>> answers;
 
@@ -141,8 +161,79 @@ public:
     Solution() = default;
     ~Solution() = default;
 
+    int findRowsNumberIndex(SmallFixedStack<PosInfo, 81> & valid_moves,
+                            size_t row, size_t num) {
+        size_t index = row * 9;
+        for (size_t col = 0; col < SudokuHelper::Cols; col++) {
+            if (this->nums_usable[index].test(num)) {
+                int move_index = valid_moves.find(PosInfo(row, col));
+                assert(move_index > 0);
+                return move_index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
+    int findColsNumberIndex(SmallFixedStack<PosInfo, 81> & valid_moves,
+                            size_t col, size_t num) {
+        size_t index = col;
+        for (size_t row = 0; row < SudokuHelper::Rows; row++) {
+            if (this->nums_usable[index].test(num)) {
+                int move_index = valid_moves.find(PosInfo(row, col));
+                assert(move_index > 0);
+                return move_index;
+            }
+            index += SudokuHelper::Cols;
+        }
+        return -1;
+    }
+
+    int findPalacesNumberIndex(SmallFixedStack<PosInfo, 81> & valid_moves,
+                               size_t palace, size_t num) {
+        size_t palace_row_base = palace / 3 * 3 * 9;
+        size_t palace_col_base = palace % 3 * 3;
+        for (size_t posY = 0; posY < SudokuHelper::PalaceRows; posY++) {
+            size_t index = palace_row_base + palace_col_base;
+            for (size_t posX = 0; posX < SudokuHelper::PalaceCols; posX++) {
+                if (this->nums_usable[index].test(num)) {
+                    size_t row = index / 9;
+                    size_t col = index % 9;
+                    int move_index = valid_moves.find(PosInfo(row, col));
+                    assert(move_index > 0);
+                    return move_index;
+                }
+                index++;
+            }
+            palace_row_base += SudokuHelper::Cols;
+        }
+        return -1;
+    }
+
     int getNextFillCell(SmallFixedStack<PosInfo, 81> & valid_moves) {
         assert(valid_moves.size() > 0);
+
+        for (size_t id = 0; id < 9; id++) {
+            if (this->rows[id].count() == 8) {
+                size_t numBits = this->rows[id].to_ullong();
+                size_t num = jstd::BitScan::bsf(~numBits);
+                assert(num < SudokuHelper::Numbers);
+                return findRowsNumberIndex(valid_moves, id, num);
+            }
+            else if (this->cols[id].count() == 8) {
+                size_t numBits = this->cols[id].to_ullong();
+                size_t num = jstd::BitScan::bsf(~numBits);
+                assert(num < SudokuHelper::Numbers);
+                return findColsNumberIndex(valid_moves, id, num);
+            }
+            else if (this->palaces[id].count() == 8) {
+                size_t numBits = this->palaces[id].to_ullong();
+                size_t num = jstd::BitScan::bsf(~numBits);
+                assert(num < SudokuHelper::Numbers);
+                return findPalacesNumberIndex(valid_moves, id, num);
+            }
+        }
+
         size_t minUsable = size_t(-1);
         int min_index = -1;
         for (int index = valid_moves.begin(); index != valid_moves.end(); index++) {
@@ -202,6 +293,8 @@ public:
             }
             pos += (9 - 3);
         }
+
+        this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>
@@ -209,9 +302,11 @@ public:
         size_t cell_y = row * 9;
         size_t palace_row = row / 3 * 3;
         for (size_t x = 0; x < Cols; x++) {
-            if (isUndo || x != col) {
-                size_t palace = palace_row + x / 3;
-                this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+            if (isUndo || (x != col)) {
+                if (!this->cell_filled[row].test(x)) {
+                    size_t palace = palace_row + x / 3;
+                    this->nums_usable[cell_y + x] = getUsable(row, x, palace);
+                }
             }
         }
 
@@ -219,8 +314,10 @@ public:
         size_t palace_col = col / 3;
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
-                size_t palace = y / 3 * 3 + palace_col;
-                this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                if (!this->cell_filled[y].test(col)) {
+                    size_t palace = y / 3 * 3 + palace_col;
+                    this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
+                }
             }
         }
 
@@ -231,7 +328,9 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    if (!this->cell_filled[palace_row + y].test(palace_col + x)) {
+                        this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
+                    }
                 }
                 pos++;
             }
@@ -244,6 +343,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
+        this->cell_filled[row].set(col);
     }
 
     void doFillNum(size_t row, size_t col, size_t num) {
@@ -251,6 +351,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
+        this->cell_filled[row].set(col);
         updateUsable(row, col, num);
     }
 
@@ -259,6 +360,7 @@ public:
         this->rows[row].reset(num);
         this->cols[col].reset(num);
         this->palaces[palace].reset(num);
+        this->cell_filled[row].reset(col);
         updateUndoUsable<true>(row, col);
     }
 
@@ -300,8 +402,11 @@ public:
         return false;
     }
 
-    void solveSudoku(std::vector<std::vector<char>> & board) {
-        SudokuHelper::display_board(board, true);
+    double solveSudoku(std::vector<std::vector<char>> & board, bool verbose = true) {
+        double elapsed_time;
+        if (verbose) {
+            SudokuHelper::display_board(board, true);
+        }
         recur_counter = 0;
 
         jtest::StopWatch sw;
@@ -312,12 +417,15 @@ public:
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
+                size_t pos = row * 9 + col;
                 char val = line[col];
                 if (val != '.') {
+                    this->row_col_index[pos] = -1;
                     size_t num = val - '1';
                     fillNum(row, col, num);
                 }
                 else {
+                    this->row_col_index[pos] = index;
                     valid_moves.insert(index, row, col);
                     index++;
                 }
@@ -338,14 +446,19 @@ public:
         this->solve(board, valid_moves);
 
         sw.stop();
+        elapsed_time = sw.getElapsedMillisec();
 
-        if (kSearchAllStages)
-            SudokuHelper::display_answers(this->answers);
-        else
-            SudokuHelper::display_board(board);
+        if (verbose) {
+            if (kSearchAllStages)
+                SudokuHelper::display_answers(this->answers);
+            else
+                SudokuHelper::display_board(board);
 
-        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
-               sw.getElapsedMillisec(), (uint32_t)recur_counter);
+            printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+                   sw.getElapsedMillisec(), (uint32_t)recur_counter);
+        }
+
+        return elapsed_time;
     }
 };
 
