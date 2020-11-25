@@ -806,7 +806,7 @@ struct BasicSudokuHelper {
         printf("Total answers: %d\n\n", (int)answers.size());
         int i = 0;
         for (auto answer : answers) {
-            SudokuHelper::display_board(answer, false, i);
+            BasicSudokuHelper::display_board(answer, false, i);
             i++;
         }
     }
