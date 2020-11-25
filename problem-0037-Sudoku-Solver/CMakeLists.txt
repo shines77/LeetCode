@@ -52,6 +52,7 @@ include_directories(src)
 set(SOURCE_FILES
     src/ice_sudoku_solver.c
     src/SudokuSolver_v1.cpp
+    src/SudokuSolver_v1a.cpp
     src/Solution.cpp
     )
 
