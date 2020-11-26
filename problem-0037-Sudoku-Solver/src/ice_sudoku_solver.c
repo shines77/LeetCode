@@ -1,5 +1,7 @@
 
 //
+//  From: https://github.com/tropicalwzc/ice_sudoku.github.io/blob/master/sudoku_solver.c
+//
 //  main.c
 //  sudokucore
 //

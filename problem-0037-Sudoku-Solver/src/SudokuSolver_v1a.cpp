@@ -8,6 +8,8 @@
 
 using namespace LeetCode::Problem_37::v1a;
 
+size_t DancingLinks::recur_counter = 0;
+
 template <typename TDancingLinksX>
 void SudokuSolver::display_answer(std::vector<std::vector<char>> & board,
                                   const TDancingLinksX * dancingLinks) {
@@ -41,6 +43,8 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
         SudokuHelper::display_board(board, true);
     }
 
+    size_t recur_counter = 0;
+
     jtest::StopWatch sw;
     sw.start();
 
@@ -49,7 +53,7 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
 #if 1
     DancingLinks dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
     //dancingLinks.solve_non_recursive();
-    dancingLinks.solve();
+    dancingLinks.solve(recur_counter);
 #else
     DLX dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
     dancingLinks.solve();
@@ -63,7 +67,8 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
             solver.display_answers(board, &dancingLinks);
         else
             solver.display_answer(board, &dancingLinks);
-        printf("Elapsed time: %0.3f ms\n\n", elapsed_time);
+        printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+               elapsed_time, (uint32_t)recur_counter);
     }
 
     return elapsed_time;

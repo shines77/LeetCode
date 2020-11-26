@@ -17,6 +17,7 @@
 
 #include "SudokuSolver_v1.h"
 #include "SudokuSolver_v1a.h"
+#include "SudokuSolver_v1c.h"
 #include "SudokuSolver_v2.h"
 #include "SudokuSolver_v3.h"
 #include "SudokuSolver_v4.h"
@@ -473,7 +474,12 @@ void test_sudoku_files(const char * filename, const char * name)
 int main(int argc, char * argv[])
 {
     const char * filename = nullptr;
-    if (argc > 1) {
+    const char * out_file = nullptr;
+    if (argc > 2) {
+        filename = argv[1];
+        out_file = argv[2];
+    }
+    else if (argc > 1) {
         filename = argv[1];
     }
 
@@ -488,7 +494,10 @@ int main(int argc, char * argv[])
 
     if (1)
     {
-        if (filename != nullptr) {
+        if (out_file != nullptr) {
+            v1c::run_test_sudoku17(filename, out_file);
+        }
+        else if (filename != nullptr) {
             v1a_test_sudoku_files(filename);
             //test_sudoku_files<v1a::Solution>(filename, "v1a");
             test_sudoku_files<v5::Solution>(filename, "v5");

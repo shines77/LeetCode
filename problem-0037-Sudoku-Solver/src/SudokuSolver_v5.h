@@ -234,24 +234,26 @@ public:
     int getNextFillCell(SmallFixedDualList<PosInfo, 81> & valid_moves) {
         assert(valid_moves.size() > 1);
 
-        for (size_t id = 0; id < 9; id++) {
-            if (this->rows[id].count() == 8) {
-                size_t numBits = this->rows[id].to_ullong();
-                size_t num = jstd::BitScan::bsf(~numBits);
-                assert(num < SudokuHelper::Numbers);
-                return findRowsNumberIndex(valid_moves, id, num);
-            }
-            else if (this->cols[id].count() == 8) {
-                size_t numBits = this->cols[id].to_ullong();
-                size_t num = jstd::BitScan::bsf(~numBits);
-                assert(num < SudokuHelper::Numbers);
-                return findColsNumberIndex(valid_moves, id, num);
-            }
-            else if (this->palaces[id].count() == 8) {
-                size_t numBits = this->palaces[id].to_ullong();
-                size_t num = jstd::BitScan::bsf(~numBits);
-                assert(num < SudokuHelper::Numbers);
-                return findPalacesNumberIndex(valid_moves, id, num);
+        if (valid_moves.size() > 30) {
+            for (size_t id = 0; id < 9; id++) {
+                if (this->rows[id].count() == 8) {
+                    size_t numBits = this->rows[id].to_ullong();
+                    size_t num = jstd::BitScan::bsf(~numBits);
+                    assert(num < SudokuHelper::Numbers);
+                    return findRowsNumberIndex(valid_moves, id, num);
+                }
+                else if (this->cols[id].count() == 8) {
+                    size_t numBits = this->cols[id].to_ullong();
+                    size_t num = jstd::BitScan::bsf(~numBits);
+                    assert(num < SudokuHelper::Numbers);
+                    return findColsNumberIndex(valid_moves, id, num);
+                }
+                else if (this->palaces[id].count() == 8) {
+                    size_t numBits = this->palaces[id].to_ullong();
+                    size_t num = jstd::BitScan::bsf(~numBits);
+                    assert(num < SudokuHelper::Numbers);
+                    return findPalacesNumberIndex(valid_moves, id, num);
+                }
             }
         }
 

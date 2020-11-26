@@ -146,10 +146,12 @@ private:
         int row, col;
     };
     
-    std::vector<Node>   linked_list;
+    std::vector<Node>   list_;
     std::vector<int>    col_size;
     int                 last_idx;
     std::vector<int>    answer;
+
+    static size_t recur_counter;
 
     std::vector<std::vector<int>> answers;
 
@@ -175,13 +177,13 @@ private:
 
 public:
     DancingLinks(typename SudokuSolver::matrix_type & matrix, size_t nodes)
-        : linked_list(nodes), col_size(matrix.cols() + 1), last_idx((int)matrix.cols() + 1) {
+        : list_(nodes), col_size(matrix.cols() + 1), last_idx((int)matrix.cols() + 1) {
         this->init(matrix);
     }
 
     ~DancingLinks() {}
 
-    bool is_empty() const { return (linked_list[0].next == 0); }
+    bool is_empty() const { return (list_[0].next == 0); }
 
     const std::vector<int> &              get_answer() const  { return this->answer; }
     const std::vector<std::vector<int>> & get_answers() const { return this->answers; }
@@ -190,17 +192,19 @@ private:
     void init(const typename SudokuSolver::matrix_type & matrix) {
         int cols = (int)matrix.cols();
         for (int col = 0; col <= cols; col++) {
-            linked_list[col].prev = col - 1;
-            linked_list[col].next = col + 1;
-            linked_list[col].up = col;
-            linked_list[col].down = col;
-            linked_list[col].row = 0;
-            linked_list[col].col = col;
+            list_[col].prev = col - 1;
+            list_[col].next = col + 1;
+            list_[col].up = col;
+            list_[col].down = col;
+            list_[col].row = 0;
+            list_[col].col = col;
         }
-        linked_list[0].prev = cols;
-        linked_list[cols].next = 0;
+        list_[0].prev = cols;
+        list_[cols].next = 0;
 
         init_from_matrix(matrix);
+
+        recur_counter = 0;
     }
 
     void init_from_matrix(const typename SudokuSolver::matrix_type & matrix) {
@@ -218,22 +222,22 @@ private:
     }
 
     int insert(int head, int tail, int row, int col) {
-        linked_list[last_idx].prev = tail;
-        linked_list[last_idx].next = head;
-        linked_list[last_idx].up = col;
-        linked_list[last_idx].down = linked_list[col].down;
-        linked_list[last_idx].row = row;
-        linked_list[last_idx].col = col;
+        list_[last_idx].prev = tail;
+        list_[last_idx].next = head;
+        list_[last_idx].up = col;
+        list_[last_idx].down = list_[col].down;
+        list_[last_idx].row = row;
+        list_[last_idx].col = col;
 #if 1
-        linked_list[tail].next = last_idx;
-        linked_list[head].prev = last_idx;
-        linked_list[col].down = last_idx;
-        linked_list[linked_list[last_idx].down].up = last_idx;
+        list_[tail].next = last_idx;
+        list_[head].prev = last_idx;
+        list_[col].down = last_idx;
+        list_[list_[last_idx].down].up = last_idx;
 #else
-        linked_list[linked_list[last_idx].prev].next = last_idx;
-        linked_list[linked_list[last_idx].next].prev = last_idx;
-        linked_list[linked_list[last_idx].up].down = last_idx;
-        linked_list[linked_list[last_idx].down].up = last_idx;
+        list_[list_[last_idx].prev].next = last_idx;
+        list_[list_[last_idx].next].prev = last_idx;
+        list_[list_[last_idx].up].down = last_idx;
+        list_[list_[last_idx].down].up = last_idx;
 #endif
         col_size[col]++;
         tail = last_idx++;
@@ -241,10 +245,10 @@ private:
     }
 
     int get_min_column() const {
-        int first = linked_list[0].next;
+        int first = list_[0].next;
         int min_col = col_size[first];
         int min_col_index = first;
-        for (int i = linked_list[0].next; i != 0 ; i = linked_list[i].next) {
+        for (int i = list_[0].next; i != 0 ; i = list_[i].next) {
             if (col_size[i] < min_col) {
                 min_col = col_size[i];
                 min_col_index = i;
@@ -255,58 +259,60 @@ private:
 
 public:
     void remove(int index) {
-        linked_list[linked_list[index].prev].next = linked_list[index].next;
-        linked_list[linked_list[index].next].prev = linked_list[index].prev;
+        list_[list_[index].prev].next = list_[index].next;
+        list_[list_[index].next].prev = list_[index].prev;
 
-        for (int row = linked_list[index].down; row != index; row = linked_list[row].down) {
-            for (int col = linked_list[row].next; col != row; col = linked_list[col].next) {
-                linked_list[linked_list[col].up].down = linked_list[col].down;
-                linked_list[linked_list[col].down].up = linked_list[col].up;
-                col_size[linked_list[col].col]--;
-                assert(col_size[linked_list[col].col] >= 0);
-                if (col_size[linked_list[col].col] == 0)
+        for (int row = list_[index].down; row != index; row = list_[row].down) {
+            for (int col = list_[row].next; col != row; col = list_[col].next) {
+                list_[list_[col].up].down = list_[col].down;
+                list_[list_[col].down].up = list_[col].up;
+                col_size[list_[col].col]--;
+                assert(col_size[list_[col].col] >= 0);
+                if (col_size[list_[col].col] == 0)
                     col = col;
             }
         }
     }
 
     void restore(int index) {
-        for (int row = linked_list[index].up; row != index; row = linked_list[row].up) {
-            for (int col = linked_list[row].prev; col != row; col = linked_list[col].prev) {
-                linked_list[linked_list[col].down].up = col;
-                linked_list[linked_list[col].up].down = col;
-                col_size[linked_list[col].col]++;
+        for (int row = list_[index].up; row != index; row = list_[row].up) {
+            for (int col = list_[row].prev; col != row; col = list_[col].prev) {
+                list_[list_[col].down].up = col;
+                list_[list_[col].up].down = col;
+                col_size[list_[col].col]++;
             }
         }
 
-        linked_list[linked_list[index].next].prev = index;
-        linked_list[linked_list[index].prev].next = index;
+        list_[list_[index].next].prev = index;
+        list_[list_[index].prev].next = index;
     }
 
-    bool solve() {
+    bool search() {
         if (this->is_empty()) {
             if (kSearchAllStages)
                 this->answers.push_back(answer);
             else
                 return true;
         }
+
+        recur_counter++;
         
         int index = get_min_column();
         assert(index > 0);
         this->remove(index);
-        for (int row = linked_list[index].down; row != index; row = linked_list[row].down) {
-            this->answer.push_back(linked_list[row].row);
-            for (int col = linked_list[row].next; col != row; col = linked_list[col].next) {
-                this->remove(linked_list[col].col);
+        for (int row = list_[index].down; row != index; row = list_[row].down) {
+            this->answer.push_back(list_[row].row);
+            for (int col = list_[row].next; col != row; col = list_[col].next) {
+                this->remove(list_[col].col);
             }
 
-            if (solve()) {
+            if (search()) {
                 if (!kSearchAllStages)
                     return true;
             }
 
-            for (int col = linked_list[row].prev; col != row; col = linked_list[col].prev) {
-                this->restore(linked_list[col].col);
+            for (int col = list_[row].prev; col != row; col = list_[col].prev) {
+                this->restore(list_[col].col);
             }
             this->answer.pop_back();
         }
@@ -314,7 +320,7 @@ public:
         return false;
     }
 
-    bool solve_non_recursive() {
+    bool search_non_recursive() {
         int state = StackState::SearchNext;
         std::vector<StackInfo> stack;
         StackInfo stack_info;
@@ -334,19 +340,21 @@ Search_Next:
                     }
                 }
 
+                recur_counter++;
+
                 index = get_min_column();
                 assert(index > 0);
                 this->remove(index);
 
-                row = linked_list[index].down;
+                row = list_[index].down;
 
                 while (row != index) {
                     stack_info.set(index, row);
                     stack.push_back(stack_info);
-                    this->answer.push_back(linked_list[row].row);
+                    this->answer.push_back(list_[row].row);
 
-                    for (int col = linked_list[row].next; col != row; col = linked_list[col].next) {
-                        this->remove(linked_list[col].col);
+                    for (int col = list_[row].next; col != row; col = list_[col].next) {
+                        this->remove(list_[col].col);
                     }
 
                     // SearchNext
@@ -358,9 +366,9 @@ BackTracking_Retry:
                 while (row != index) {
                     stack_info.set(index, row);
                     stack.push_back(stack_info);
-                    this->answer.push_back(linked_list[row].row);
-                    for (int col = linked_list[row].next; col != row; col = linked_list[col].next) {
-                        this->remove(linked_list[col].col);
+                    this->answer.push_back(list_[row].row);
+                    for (int col = list_[row].next; col != row; col = list_[col].next) {
+                        this->remove(list_[col].col);
                     }
 
                     state = StackState::SearchNext;
@@ -376,11 +384,11 @@ BackTracking_Entry:
                 index = stack_info.index;
                 row = stack_info.row;
 
-                for (int col = linked_list[row].prev; col != row; col = linked_list[col].prev) {
-                    this->restore(linked_list[col].col);
+                for (int col = list_[row].prev; col != row; col = list_[col].prev) {
+                    this->restore(list_[col].col);
                 }
 
-                row = linked_list[row].down;
+                row = list_[row].down;
 
                 state = StackState::BackTrackingRetry;
                 goto BackTracking_Retry;
@@ -397,11 +405,23 @@ BackTracking_Entry:
 
         return false;
     }
+
+    bool solve(size_t & counter) {
+        bool success = this->search();
+        counter = recur_counter;
+        return success;
+    }
+
+    bool solve_non_recursive(size_t & counter) {
+        bool success = this->search_non_recursive();
+        counter = recur_counter;
+        return success;
+    }
 };
 
 class Solution {
 public:
-    void solveSudoku(std::vector<std::vector<char>> & board);
+    double solveSudoku(std::vector<std::vector<char>> & board, bool verbose = true);
 };
 
 } // namespace v1

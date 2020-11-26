@@ -8,6 +8,8 @@
 
 using namespace LeetCode::Problem_37::v1;
 
+size_t DancingLinks::recur_counter = 0;
+
 void SudokuSolver::display_answer(std::vector<std::vector<char>> & board,
                                   const DancingLinks * dancingLinks) {
     for (auto idx : dancingLinks->get_answer()) {
@@ -30,9 +32,14 @@ void SudokuSolver::display_answers(std::vector<std::vector<char>> & board,
     }
 }
 
-void Solution::solveSudoku(std::vector<std::vector<char>> & board)
+double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbose)
 {
-    SudokuHelper::display_board(board, true);
+    double elapsed_time;
+    if (verbose) {
+        SudokuHelper::display_board(board, true);
+    }
+    
+    size_t recur_counter = 0;
 
     jtest::StopWatch sw;
     sw.start();
@@ -41,13 +48,19 @@ void Solution::solveSudoku(std::vector<std::vector<char>> & board)
 
     DancingLinks dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
     //dancingLinks.solve_non_recursive();
-    dancingLinks.solve();
+    dancingLinks.solve(recur_counter);
 
     sw.stop();
+    elapsed_time = sw.getElapsedMillisec();
 
-    if (kSearchAllStages)
-        solver.display_answers(board, &dancingLinks);
-    else
-        solver.display_answer(board, &dancingLinks);
-    printf("Elapsed time: %0.3f ms\n\n", sw.getElapsedMillisec());
+    if (verbose) {
+        if (kSearchAllStages)
+            solver.display_answers(board, &dancingLinks);
+        else
+            solver.display_answer(board, &dancingLinks);
+            printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
+                   elapsed_time, (uint32_t)recur_counter);
+    }
+
+    return elapsed_time;
 }
