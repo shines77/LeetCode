@@ -22,7 +22,7 @@
 #include "BitScan.h"
 #include "StopWatch.h"
 
-#define V7_SEARCH_ALL_STAGE     0
+#define V7_SEARCH_ALL_ANSWERS   0
 
 #ifdef NDEBUG
 #define V7_USE_MOVE_PATH        0
@@ -36,10 +36,10 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v7 {
 
-#if V7_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V7_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 static const bool kAllowFindInvalidIndex = false;
@@ -1043,11 +1043,11 @@ Find_Next_Step:
         }
         valid_nums.finalize();
 
-        this->solve<kSearchAllStages>(board, valid_nums, valid_moves);
+        this->solve<kSearchAllAnswers>(board, valid_nums, valid_moves);
 
         sw.stop();
 
-        if (kSearchAllStages)
+        if (kSearchAllAnswers)
             SudokuHelper::display_answers(this->answers);
         else
             SudokuHelper::display_board(board);

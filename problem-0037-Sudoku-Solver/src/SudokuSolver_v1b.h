@@ -19,17 +19,16 @@
 #include "SudokuSolver.h"
 #include "StopWatch.h"
 
-#define V1B_SEARCH_ALL_STAGE    0
-#define V1B_INSERT_MODE         1
+#define V1B_SEARCH_ALL_ANSWERS  0
 
 namespace LeetCode {
 namespace Problem_37 {
 namespace v1b {
 
-#if V1B_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V1B_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 template <size_t Capacity>
@@ -257,7 +256,7 @@ public:
 
         this->answers_.clear();
         this->answer_.reserve(81);
-#if V1B_SEARCH_ALL_STAGE
+#if V1B_SEARCH_ALL_ANSWERS
         this->answers_.clear();
 #endif
         recur_counter = 0;
@@ -376,7 +375,7 @@ public:
 
     bool search() {
         if (this->is_empty()) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 this->answers_.push_back(this->answer_);
             else
                 return true;
@@ -394,7 +393,7 @@ public:
                 }
 
                 if (this->search()) {
-                    if (!kSearchAllStages)
+                    if (!kSearchAllAnswers)
                         return true;
                 }
 
@@ -441,7 +440,7 @@ public:
             if (state == StackState::SearchNext) {
 Search_Next:
                 if (this->is_empty()) {
-                    if (kSearchAllStages) {
+                    if (kSearchAllAnswers) {
                         this->answers_.push_back(answer_);
                         state = StackState::BackTracking;
                         goto BackTracking_Entry;
@@ -577,7 +576,7 @@ public:
         elapsed_time = sw.getElapsedMillisec();
 
         if (verbose) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 solver_.display_answers(board);
             else
                 solver_.display_answer(board);
