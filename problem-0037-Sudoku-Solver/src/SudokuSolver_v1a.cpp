@@ -51,11 +51,11 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
     SudokuSolver solver(board);
 
 #if 1
-    DancingLinks dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
+    DancingLinks dancingLinks(solver.getDlkMatrix(), (SudokuHelper::TotalSize + 1) * 4 + 1);
     //dancingLinks.solve_non_recursive();
     dancingLinks.solve(recur_counter);
 #else
-    DLX dancingLinks(solver.getDlkMatrix(), SudokuSolver::TotalSize * 4 + 1);
+    DLX dancingLinks(solver.getDlkMatrix(), SudokuHelper::TotalSize * 4 + 1);
     dancingLinks.solve();
 #endif
 

@@ -150,11 +150,20 @@ public:
 
 class DancingLinks {
 private:
+#if 0
     struct Node {
         int prev, next;
         int up, down;
         int row, col;
     };
+#else
+    struct alignas(32) Node {
+        int prev, next;
+        int up, down;
+        int row, col;
+        int reserve1, reserve2;
+    };
+#endif
     
     std::vector<Node>   list_;
     std::vector<int>    col_size;
@@ -284,7 +293,7 @@ private:
         list_[index].col = col;
 #if 1
         list_[list_[index].up].down = index;
-        list_[list_[index].down].up = index;
+        list_[col].up = index;
 #else
         list_[list_[index].up].down = index;
         list_[list_[index].down].up = index;

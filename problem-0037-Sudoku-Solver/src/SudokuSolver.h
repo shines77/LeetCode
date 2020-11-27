@@ -748,6 +748,31 @@ struct BasicSudokuHelper {
     static const size_t BoardSize = Rows * Cols;
     static const size_t TotalSize = PalaceSize * Palaces * Numbers;
 
+    static const size_t TotalSize2 = Rows * Cols * Numbers;
+
+    static const size_t TotalConditions0 = 0;
+    static const size_t TotalConditions1 = Rows * Cols;
+    static const size_t TotalConditions2 = Rows * Numbers;
+    static const size_t TotalConditions3 = Cols * Numbers;
+    static const size_t TotalConditions4 = Palaces * Numbers;
+
+    static const size_t TotalConditions01 = TotalConditions0  + TotalConditions1;
+    static const size_t TotalConditions02 = TotalConditions01 + TotalConditions2;
+    static const size_t TotalConditions03 = TotalConditions02 + TotalConditions3;
+    static const size_t TotalConditions04 = TotalConditions03 + TotalConditions4;
+
+    static const size_t TotalConditions =
+        TotalConditions1 + TotalConditions2 + TotalConditions3 + TotalConditions4;
+
+    static void clear_board(std::vector<std::vector<char>> & board) {
+        for (size_t row = 0; row < board.size(); row++) {
+            std::vector<char> & line = board[row];
+            for (size_t col = 0; col < line.size(); col++) {
+                line[col] = '.';
+            }
+        }
+    }
+
     static void display_board(const std::vector<std::vector<char>> & board,
                               bool is_input = false,
                               int idx = -1) {
@@ -755,7 +780,7 @@ struct BasicSudokuHelper {
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
-                if (board[row][col] != '.')
+                if (line[col] != '.')
                     filled++;
             }
         }

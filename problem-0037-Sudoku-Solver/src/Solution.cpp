@@ -17,6 +17,7 @@
 
 #include "SudokuSolver_v1.h"
 #include "SudokuSolver_v1a.h"
+#include "SudokuSolver_v1b.h"
 #include "SudokuSolver_v1c.h"
 #include "SudokuSolver_v2.h"
 #include "SudokuSolver_v3.h"
@@ -32,6 +33,19 @@
 #include "StopWatch.h"
 
 using namespace LeetCode::Problem_37;
+
+static const bool kEnableV1Solution =   true;
+static const bool kEnableV1aSolution =  true;
+static const bool kEnableV1bSolution =  true;
+static const bool kEnableV1cSolution =  true;
+static const bool kEnableV2Solution =   false;
+static const bool kEnableV3Solution =   false;
+static const bool kEnableV4Solution =   false;
+static const bool kEnableV5Solution =   false;
+static const bool kEnableV6Solution =   false;
+static const bool kEnableV7Solution =   false;
+static const bool kEnableV8Solution =   false;
+static const bool kEnableIceSudoku  =   false;
 
 // Index: [0 - 4]
 #define TEST_CASE_INDEX         4
@@ -251,7 +265,7 @@ void make_ice_sudoku_board(int sudo_in[9][9], size_t index)
 
 void test_one_case(size_t index)
 {
-    if (1)
+    if (kEnableV1Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v1::Solution - Dancing Links\n\n");
@@ -263,7 +277,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV1aSolution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v1a::Solution - Dancing Links\n\n");
@@ -275,8 +289,31 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
+    if (kEnableV1bSolution)
+    {
+        printf("--------------------------------\n\n");
+        printf("SudokuSolver: v1b::Solution - Dancing Links\n\n");
+
+        std::vector<std::vector<char>> board;
+        make_sudoku_board(board, index);
+
+        v1b::Solution solution;
+        solution.solveSudoku(board);
+    }
+
+    if (kEnableV1cSolution)
+    {
+        printf("--------------------------------\n\n");
+        printf("SudokuSolver: v1c::Solution - Dancing Links\n\n");
+
+        std::vector<std::vector<char>> board;
+        make_sudoku_board(board, index);
+
+        v1c::solve_sudoku(board, true);
+    }
+
 #ifdef NDEBUG
-    if (1)
+    if (kEnableV2Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v2::Solution - dfs\n\n");
@@ -288,7 +325,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV3Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v3::Solution - dfs\n\n");
@@ -300,7 +337,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV4Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v4::Solution - dfs\n\n");
@@ -313,7 +350,7 @@ void test_one_case(size_t index)
     }
 #endif
 
-    if (1)
+    if (kEnableV5Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v5::Solution - dfs\n\n");
@@ -325,7 +362,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV6Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v6::Solution - dfs\n\n");
@@ -337,7 +374,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV7Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v7::Solution - dfs\n\n");
@@ -349,7 +386,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableV8Solution)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: v8::Solution - dfs\n\n");
@@ -361,7 +398,7 @@ void test_one_case(size_t index)
         solution.solveSudoku(board);
     }
 
-    if (1)
+    if (kEnableIceSudoku)
     {
         printf("--------------------------------\n\n");
         printf("SudokuSolver: ice suduku\n\n");
@@ -388,10 +425,10 @@ void test_one_case(size_t index)
     printf("--------------------------------\n\n");
 }
 
-void v1a_test_sudoku_files(const char * filename)
+void test_sudoku_files_dlx_v1c(const char * filename, const char * name)
 {
     printf("--------------------------------\n\n");
-    printf("SudokuSolver: v1a::Solution - Dancing Links\n\n");
+    printf("SudokuSolver: %s::Solution - Dancing Links\n\n", name);
 
     size_t puzzleCount = 0;
     double total_time = 0.0;
@@ -407,7 +444,48 @@ void v1a_test_sudoku_files(const char * filename)
                 std::vector<std::vector<char>> board;
                 size_t grid_nums = make_sudoku_board(board, line);
                 if (grid_nums >= 81) {
-                    v1a::Solution solution;
+                    double elapsed_time = v1c::solve_sudoku(board, false);
+                    total_time += elapsed_time;
+                    puzzleCount++;
+#ifndef NDEBUG
+                    if (puzzleCount > 100)
+                        break;
+#endif
+                }
+                else break;
+            }
+            ifs.close();
+        }
+    }
+    catch (std::exception & ex) {
+        std::cout << "Exception info: " << ex.what() << std::endl << std::endl;
+    }
+
+    printf("Total puzzle count = %u\n\n", (uint32_t)puzzleCount);
+    printf("Total elapsed time: %0.3f ms\n\n", total_time);
+}
+
+template <typename SolverSolution>
+void test_sudoku_files_dlx(const char * filename, const char * name)
+{
+    printf("--------------------------------\n\n");
+    printf("SudokuSolver: %s::Solution - Dancing Links\n\n", name);
+
+    size_t puzzleCount = 0;
+    double total_time = 0.0;
+    SolverSolution solution;
+
+    std::ifstream ifs;
+    try {
+        ifs.open(filename, std::ios::in);
+        if (ifs.good()) {
+            while (!ifs.eof()) {
+                char line[128];
+                ifs.getline(line, sizeof(line));
+
+                std::vector<std::vector<char>> board;
+                size_t grid_nums = make_sudoku_board(board, line);
+                if (grid_nums >= 81) {
                     double elapsed_time = solution.solveSudoku(board, false);
                     total_time += elapsed_time;
                     puzzleCount++;
@@ -430,7 +508,7 @@ void v1a_test_sudoku_files(const char * filename)
 }
 
 template <typename SolverSolution>
-void test_sudoku_files(const char * filename, const char * name)
+void test_sudoku_files_dfs(const char * filename, const char * name)
 {
     printf("--------------------------------\n\n");
     printf("SudokuSolver: %s::Solution - dfs\n\n", name);
@@ -498,11 +576,12 @@ int main(int argc, char * argv[])
             v1c::run_test_sudoku17(filename, out_file);
         }
         else if (filename != nullptr) {
-            v1a_test_sudoku_files(filename);
-            //test_sudoku_files<v1a::Solution>(filename, "v1a");
-            test_sudoku_files<v5::Solution>(filename, "v5");
-            test_sudoku_files<v6::Solution>(filename, "v6");
-            test_sudoku_files<v8::Solution>(filename, "v8");
+            //test_sudoku_files_dlx<v1a::Solution>(filename, "v1a");
+            test_sudoku_files_dlx<v1b::Solution>(filename, "v1b");
+            test_sudoku_files_dlx_v1c(filename, "v1c");
+            //test_sudoku_files_dfs<v5::Solution>(filename, "v5");
+            //test_sudoku_files_dfs<v6::Solution>(filename, "v6");
+            //test_sudoku_files_dfs<v8::Solution>(filename, "v8");
         }
     }
 
