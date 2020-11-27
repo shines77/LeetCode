@@ -322,21 +322,6 @@ private:
         return min_col_index;
     }
 
-    int get_max_column() const {
-        int first = list_[0].next;
-        int max_col = col_size[first];
-        assert(max_col >= 0);
-        int max_col_index = first;
-        for (int i = list_[first].next; i != 0 ; i = list_[i].next) {
-            if (col_size[i] > max_col) {
-                assert(col_size[i] >= 0);
-                max_col = col_size[i];
-                max_col_index = i;
-            }
-        }
-        return max_col_index;
-    }
-
 public:
     void remove(int index) {
         assert(index > 0);

@@ -236,24 +236,6 @@ private:
         return min_col_index;
     }
 
-    int get_max_column() const {
-        int first = list_.next[0];
-        int max_col = col_size_[first];
-        assert(max_col >= 0);
-        int max_col_index = first;
-        for (int i = list_.next[first]; i != 0 ; i = list_.next[i]) {
-            int col_size = col_size_[i];
-            if (col_size > max_col) {
-                assert(col_size >= 0);
-                if (col_size >= 9)
-                    return i;
-                max_col = col_size;
-                max_col_index = i;
-            }
-        }
-        return max_col_index;
-    }
-
 public:
     void init() {
         int cols = this->cols();
@@ -427,7 +409,7 @@ public:
         return false;
     }
 
-    bool solve() {       
+    bool solve() {
         int one_columns[82];
         size_t columns = get_one_columns(one_columns);
 
