@@ -156,13 +156,14 @@ private:
     std::vector<int>    answer_;
     int                 last_idx_;
 
-    size_t rows_[TotalSize + 1];
-    size_t cols_[TotalSize + 1];
-    size_t numbers_[TotalSize + 1];
+    int rows_[TotalSize + 1];
+    int cols_[TotalSize + 1];
+    int numbers_[TotalSize + 1];
 
     std::vector<std::vector<int>> answers_;
 
     static size_t recur_counter;
+    static size_t init_counter;
 
     struct StackInfo {
         int index;
@@ -199,8 +200,20 @@ public:
     const std::vector<std::vector<int>> & get_answers() const { return this->answers_; }
 
     static size_t get_recur_counter() { return DancingLinks::recur_counter; }
+    static size_t get_init_counter() { return DancingLinks::init_counter; }
 
 private:
+    size_t get_one_columns(int one_columns[81]) const {
+        size_t count = 0;
+        for (int i = list_.next[0]; i != 0 ; i = list_.next[i]) {
+            if (col_size_[i] == 1) {
+                one_columns[count] = i;
+                count++;
+            }
+        }
+        return count;
+    }
+
     int get_min_column() const {
         int first = list_.next[0];
         int min_col = col_size_[first];
@@ -212,11 +225,9 @@ private:
             int col_size = col_size_[i];
             if (col_size < min_col) {
                 assert(col_size >= 0);
-#if 1
                 if (col_size <= 0)
                     return 0;
-#endif
-                if (col_size <= 1)
+                if (col_size == 1)
                     return i;
                 min_col = col_size;
                 min_col_index = i;
@@ -231,9 +242,12 @@ private:
         assert(max_col >= 0);
         int max_col_index = first;
         for (int i = list_.next[first]; i != 0 ; i = list_.next[i]) {
-            if (col_size_[i] > max_col) {
-                assert(col_size_[i] >= 0);
-                max_col = col_size_[i];
+            int col_size = col_size_[i];
+            if (col_size > max_col) {
+                assert(col_size >= 0);
+                if (col_size >= 9)
+                    return i;
+                max_col = col_size;
                 max_col_index = i;
             }
         }
@@ -258,7 +272,6 @@ public:
         for (size_t i = 0; i < col_size_.size(); i++) {
             col_size_[i] = 0;
         }
-        //col_size_.resize(this->cols() + 1);
 
         this->answers_.clear();
         this->answer_.reserve(81);
@@ -266,6 +279,7 @@ public:
         this->answers_.clear();
 #endif
         recur_counter = 0;
+        init_counter = 0;
     }
 
     void build(const std::vector<std::vector<char>> & board) {
@@ -309,9 +323,9 @@ public:
                     this->insert(index + 2, row_idx, (int)(81 * 2 + col * 9 + number + 1));
                     this->insert(index + 3, row_idx, (int)(81 * 3 + palace * 9 + number + 1));
 
-                    this->rows_[row_idx] = row;
-                    this->cols_[row_idx] = col;
-                    this->numbers_[row_idx] = number;
+                    this->rows_[row_idx] = (int)row;
+                    this->cols_[row_idx] = (int)col;
+                    this->numbers_[row_idx] = (int)number;
                     index += 4;
                     row_idx++;
 
@@ -378,7 +392,7 @@ public:
         }
     }
 
-    bool solve() {
+    bool search() {
         if (this->is_empty()) {
             if (kSearchAllStages)
                 this->answers_.push_back(this->answer_);
@@ -389,8 +403,6 @@ public:
         recur_counter++;
         
         int index = get_min_column();
-        assert(index > 0);
-
         if (index > 0) {
             this->remove(index);
             for (int row = list_.down[index]; row != index; row = list_.down[row]) {
@@ -399,7 +411,7 @@ public:
                     this->remove(list_.col[col]);
                 }
 
-                if (this->solve()) {
+                if (this->search()) {
                     if (!kSearchAllStages)
                         return true;
                 }
@@ -413,6 +425,28 @@ public:
         }
 
         return false;
+    }
+
+    bool solve() {       
+        int one_columns[82];
+        size_t columns = get_one_columns(one_columns);
+
+        for (size_t i = 0; i < columns; i++) {
+            int index = one_columns[i];
+            assert(index > 0);
+
+            this->remove(index);
+            for (int row = list_.down[index]; row != index; row = list_.down[row]) {
+                this->answer_.push_back(list_.row[row]);
+                for (int col = list_.next[row]; col != row; col = list_.next[col]) {
+                    this->remove(list_.col[col]);
+                }
+            }
+
+            init_counter++;
+        }
+
+        return this->search();
     }
 
     bool solve_non_recursive() {
@@ -438,7 +472,12 @@ Search_Next:
                 recur_counter++;
 
                 index = get_min_column();
-                assert(index > 0);
+                if (index <= 0) {
+                    state = StackState::BackTracking;
+                    goto BackTracking_Entry;
+                }
+
+                //assert(index > 0);
                 this->remove(index);
 
                 row = list_.down[index];
@@ -526,6 +565,7 @@ BackTracking_Entry:
 };
 
 size_t DancingLinks::recur_counter = 0;
+size_t DancingLinks::init_counter = 0;
 
 class Solution {
 private:
@@ -548,8 +588,8 @@ public:
 
         solver_.init();
         solver_.build(board);
-        solver_.solve();
-        //solver.solve_non_recursive();
+        bool success = solver_.solve();
+        //bool success = solver_.solve_non_recursive();
 
         sw.stop();
         elapsed_time = sw.getElapsedMillisec();
@@ -559,8 +599,9 @@ public:
                 solver_.display_answers(board);
             else
                 solver_.display_answer(board);
-            printf("Elapsed time: %0.3f ms, recur_counter: %u\n\n",
-                   elapsed_time, (uint32_t)DancingLinks::get_recur_counter());
+            printf("Elapsed time: %0.3f ms, init_counter: %u, recur_counter: %u\n\n",
+                   elapsed_time, (uint32_t)DancingLinks::get_init_counter(),
+                   (uint32_t)DancingLinks::get_recur_counter());
         }
 
         return elapsed_time;

@@ -38,14 +38,14 @@ static const bool kEnableV1Solution =   true;
 static const bool kEnableV1aSolution =  true;
 static const bool kEnableV1bSolution =  true;
 static const bool kEnableV1cSolution =  true;
-static const bool kEnableV2Solution =   false;
-static const bool kEnableV3Solution =   false;
-static const bool kEnableV4Solution =   false;
-static const bool kEnableV5Solution =   false;
-static const bool kEnableV6Solution =   false;
-static const bool kEnableV7Solution =   false;
-static const bool kEnableV8Solution =   false;
-static const bool kEnableIceSudoku  =   false;
+static const bool kEnableV2Solution =   true;
+static const bool kEnableV3Solution =   true;
+static const bool kEnableV4Solution =   true;
+static const bool kEnableV5Solution =   true;
+static const bool kEnableV6Solution =   true;
+static const bool kEnableV7Solution =   true;
+static const bool kEnableV8Solution =   true;
+static const bool kEnableIceSudoku  =   true;
 
 // Index: [0 - 4]
 #define TEST_CASE_INDEX         4
