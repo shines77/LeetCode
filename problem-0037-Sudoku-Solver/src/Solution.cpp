@@ -215,28 +215,31 @@ size_t make_sudoku_board(std::vector<std::vector<char>> & board, char lines[128]
     size_t grid_nums = 0;
     for (size_t row = 0; row < SudokuHelper::Rows; row++) {
         std::vector<char> line;
-        size_t col = 0;
+        size_t valid = 0;
         const char * prows = &lines[row * 9];
-        while (col < SudokuHelper::Cols) {
+        for (size_t col = 0; col < SudokuHelper::Cols; col++) {
             char val = *prows;
             if (val >= '0' && val <= '9') {
                 if (val != '0')
                     line.push_back(val);
                 else
                     line.push_back('.');
-                col++;
+                valid++;
                 assert(col <= SudokuHelper::Cols);
             }
             else if (val == '.') {
                 line.push_back('.');
-                col++;
+                valid++;
                 assert(col <= SudokuHelper::Cols);
+            }
+            else if (val == '\0') {
+                break;
             }
             prows++;  
         }
-        assert(col == SudokuHelper::Cols);
+        assert(valid == SudokuHelper::Cols || valid == 0);
         board.push_back(line);
-        grid_nums += col;
+        grid_nums += valid;
     }
     return grid_nums;
 }
@@ -456,7 +459,8 @@ void test_sudoku_files_dlx(const char * filename, const char * name)
         if (ifs.good()) {
             while (!ifs.eof()) {
                 char line[128];
-                ifs.getline(line, sizeof(line));
+                std::memset(line, 0, 16);
+                ifs.getline(line, sizeof(line) - 1);
 
                 std::vector<std::vector<char>> board;
                 size_t grid_nums = make_sudoku_board(board, line);
@@ -467,7 +471,7 @@ void test_sudoku_files_dlx(const char * filename, const char * name)
                     if (success) {
                         puzzleCount++;
 #ifndef NDEBUG
-                        if (puzzleCount > 100)
+                        if (puzzleCount > 60000)
                             break;
 #endif
                     }
@@ -500,7 +504,8 @@ void test_sudoku_files_dfs(const char * filename, const char * name)
         if (ifs.good()) {
             while (!ifs.eof()) {
                 char line[128];
-                ifs.getline(line, sizeof(line));
+                std::memset(line, 0, 16);
+                ifs.getline(line, sizeof(line) - 1);
 
                 std::vector<std::vector<char>> board;
                 size_t grid_nums = make_sudoku_board(board, line);
@@ -541,7 +546,8 @@ void test_sudoku_files_dlx_v1b(const char * filename, const char * name)
         if (ifs.good()) {
             while (!ifs.eof()) {
                 char line[128];
-                ifs.getline(line, sizeof(line));
+                std::memset(line, 0, 16);
+                ifs.getline(line, sizeof(line) - 1);
 
                 std::vector<std::vector<char>> board;
                 size_t grid_nums = make_sudoku_board(board, line);
