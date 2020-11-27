@@ -18,16 +18,16 @@
 
 #include "SudokuSolver.h"
 
-#define V1_SEARCH_ALL_STAGE     0
+#define V1_SEARCH_ALL_ANSWERS   0
 
 namespace LeetCode {
 namespace Problem_37 {
 namespace v1 {
 
-#if V1_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V1_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 class DancingLinks;
@@ -289,7 +289,7 @@ public:
 
     bool search() {
         if (this->is_empty()) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 this->answers.push_back(answer);
             else
                 return true;
@@ -307,7 +307,7 @@ public:
             }
 
             if (search()) {
-                if (!kSearchAllStages)
+                if (!kSearchAllAnswers)
                     return true;
             }
 
@@ -330,7 +330,7 @@ public:
             if (state == StackState::SearchNext) {
 Search_Next:
                 if (this->is_empty()) {
-                    if (kSearchAllStages) {
+                    if (kSearchAllAnswers) {
                         this->answers.push_back(answer);
                         state = StackState::BackTracking;
                         goto BackTracking_Entry;

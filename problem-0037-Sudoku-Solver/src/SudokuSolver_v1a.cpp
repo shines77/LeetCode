@@ -63,7 +63,7 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
     elapsed_time = sw.getElapsedMillisec();
 
     if (verbose) {
-        if (kSearchAllStages)
+        if (kSearchAllAnswers)
             solver.display_answers(board, &dancingLinks);
         else
             solver.display_answer(board, &dancingLinks);

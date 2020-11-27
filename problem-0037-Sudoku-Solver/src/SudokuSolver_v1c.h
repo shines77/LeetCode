@@ -24,17 +24,17 @@
 #include "SudokuSolver.h"
 #include "StopWatch.h"
 
-#define V1C_SEARCH_ALL_STAGE    0
+#define V1C_SEARCH_ALL_ANSWERS  0
 #define V1C_INSERT_MODE         1
 
 namespace LeetCode {
 namespace Problem_37 {
 namespace v1c {
 
-#if V1C_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V1C_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 //

@@ -22,7 +22,7 @@
 #include "BitScan.h"
 #include "StopWatch.h"
 
-#define V7_SEARCH_ALL_STAGE     0
+#define V7_SEARCH_ALL_ANSWERS   0
 
 #ifdef NDEBUG
 #define V7_USE_MOVE_PATH        0
@@ -36,10 +36,10 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v7 {
 
-#if V7_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V7_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 static const bool kAllowFindInvalidIndex = false;
@@ -680,11 +680,11 @@ public:
 #endif
     }
 
-    template <bool NeedSearchAllStages = false>
+    template <bool NeedSearchAllAnswers = false>
     bool solve_end(std::vector<std::vector<char>> & board,
                    SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
-            if (NeedSearchAllStages)
+            if (NeedSearchAllAnswers)
                 this->answers.push_back(board);
             else
                 return true;
@@ -717,8 +717,8 @@ public:
 
                 board[row][col] = (char)(num + '1');
 
-                if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
-                    if (!NeedSearchAllStages) {
+                if (solve_end<NeedSearchAllAnswers>(board, valid_moves)) {
+                    if (!NeedSearchAllAnswers) {
                         return true;
                     }
                 }
@@ -736,8 +736,8 @@ public:
 
                         board[row][col] = (char)(num + '1');
 
-                        if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
-                            if (!NeedSearchAllStages) {
+                        if (solve_end<NeedSearchAllAnswers>(board, valid_moves)) {
+                            if (!NeedSearchAllAnswers) {
                                 return true;
                             }
                         }
@@ -759,12 +759,12 @@ public:
         return false;
     }
 
-    template <bool NeedSearchAllStages = false>
+    template <bool NeedSearchAllAnswers = false>
     bool solve(std::vector<std::vector<char>> & board,
                SmallFixedDualList<NumInfo, 81> & valid_nums,
                SmallFixedDualList<PosInfo, 81> & valid_moves) {
         if (valid_moves.size() <= 1) {
-            if (NeedSearchAllStages)
+            if (NeedSearchAllAnswers)
                 this->answers.push_back(board);
             else
                 return true;
@@ -816,15 +816,15 @@ public:
 
                         // kEndGameEmptiesThreshold = 40
                         if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
-                            if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve<NeedSearchAllAnswers>(board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
                         }
                         else {
-                            if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve_end<NeedSearchAllAnswers>(board, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
@@ -885,15 +885,15 @@ public:
 
                         // kEndGameEmptiesThreshold = 40
                         if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
-                            if (solve<NeedSearchAllStages>(board, valid_nums, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve<NeedSearchAllAnswers>(board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
                         }
                         else {
-                            if (solve_end<NeedSearchAllStages>(board, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve_end<NeedSearchAllAnswers>(board, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
@@ -1043,11 +1043,11 @@ Find_Next_Step:
         }
         valid_nums.finalize();
 
-        this->solve<kSearchAllStages>(board, valid_nums, valid_moves);
+        this->solve<kSearchAllAnswers>(board, valid_nums, valid_moves);
 
         sw.stop();
 
-        if (kSearchAllStages)
+        if (kSearchAllAnswers)
             SudokuHelper::display_answers(this->answers);
         else
             SudokuHelper::display_board(board);

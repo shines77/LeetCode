@@ -18,17 +18,17 @@
 
 #include "SudokuSolver.h"
 
-#define V1A_SEARCH_ALL_STAGE    0
+#define V1A_SEARCH_ALL_ANSWERS  0
 #define V1A_INSERT_MODE         1
 
 namespace LeetCode {
 namespace Problem_37 {
 namespace v1a {
 
-#if V1A_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V1A_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 class DancingLinks;
@@ -362,7 +362,7 @@ public:
 
     bool search() {
         if (this->is_empty()) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 this->answers.push_back(this->answer);
             else
                 return true;
@@ -381,7 +381,7 @@ public:
             }
 
             if (search()) {
-                if (!kSearchAllStages)
+                if (!kSearchAllAnswers)
                     return true;
             }
 
@@ -405,7 +405,7 @@ public:
             if (state == StackState::SearchNext) {
 Search_Next:
                 if (this->is_empty()) {
-                    if (kSearchAllStages) {
+                    if (kSearchAllAnswers) {
                         this->answers.push_back(answer);
                         state = StackState::BackTracking;
                         goto BackTracking_Entry;
@@ -634,7 +634,7 @@ public:
 
     bool search(size_t depth) {
         if (this->is_empty()) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 this->answers_.push_back(this->answer_);
             else
                 return true;
@@ -651,7 +651,7 @@ public:
             }
 
             if (this->search(depth + 1)) {
-                if (!kSearchAllStages)
+                if (!kSearchAllAnswers)
                     return true;
             }
 

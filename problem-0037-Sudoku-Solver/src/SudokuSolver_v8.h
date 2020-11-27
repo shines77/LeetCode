@@ -22,7 +22,7 @@
 #include "BitScan.h"
 #include "StopWatch.h"
 
-#define V8_SEARCH_ALL_STAGE     0
+#define V8_SEARCH_ALL_ANSWERS   0
 
 #ifdef NDEBUG
 #define V8_USE_MOVE_PATH        0
@@ -36,10 +36,10 @@ namespace LeetCode {
 namespace Problem_37 {
 namespace v8 {
 
-#if V8_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V8_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 static const bool kAllowFindInvalidIndex = false;
@@ -781,11 +781,11 @@ public:
         restorePalaceNumsStatus(depth, row, col, palace, palace_pos, num);
     }
 
-    template <bool NeedSearchAllStages = false>
+    template <bool NeedSearchAllAnswers = false>
     bool solve_end(size_t depth, std::vector<std::vector<char>> & board,
                    SmallFixedDualList<PosInfo, 82> & valid_moves) {
         if (valid_moves.size() <= 1) {
-            if (NeedSearchAllStages)
+            if (NeedSearchAllAnswers)
                 this->answers.push_back(board);
             else
                 return true;
@@ -813,8 +813,8 @@ public:
 
                 board[row][col] = (char)(num + '1');
 
-                if (solve_end<NeedSearchAllStages>(depth + 1, board, valid_moves)) {
-                    if (!NeedSearchAllStages) {
+                if (solve_end<NeedSearchAllAnswers>(depth + 1, board, valid_moves)) {
+                    if (!NeedSearchAllAnswers) {
                         return true;
                     }
                 }
@@ -832,8 +832,8 @@ public:
 
                         board[row][col] = (char)(num + '1');
 
-                        if (solve_end<NeedSearchAllStages>(depth + 1, board, valid_moves)) {
-                            if (!NeedSearchAllStages) {
+                        if (solve_end<NeedSearchAllAnswers>(depth + 1, board, valid_moves)) {
+                            if (!NeedSearchAllAnswers) {
                                 return true;
                             }
                         }
@@ -855,12 +855,12 @@ public:
         return false;
     }
 
-    template <bool NeedSearchAllStages = false>
+    template <bool NeedSearchAllAnswers = false>
     bool solve(size_t depth, std::vector<std::vector<char>> & board,
                SmallFixedDualList<NumInfo, 82> & valid_nums,
                SmallFixedDualList<PosInfo, 82> & valid_moves) {
         if (valid_moves.size() <= 1) {
-            if (NeedSearchAllStages)
+            if (NeedSearchAllAnswers)
                 this->answers.push_back(board);
             else
                 return true;
@@ -911,15 +911,15 @@ public:
 
                         // kEndGameEmptiesThreshold = 40
                         if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
-                            if (solve<NeedSearchAllStages>(depth + 1, board, valid_nums, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve<NeedSearchAllAnswers>(depth + 1, board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
                         }
                         else {
-                            if (solve_end<NeedSearchAllStages>(depth + 1, board, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve_end<NeedSearchAllAnswers>(depth + 1, board, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
@@ -983,15 +983,15 @@ public:
 
                         // kEndGameEmptiesThreshold = 40
                         if (valid_moves.size() > (kEndGameEmptiesThreshold + 1)) {
-                            if (solve<NeedSearchAllStages>(depth + 1, board, valid_nums, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve<NeedSearchAllAnswers>(depth + 1, board, valid_nums, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
                         }
                         else {
-                            if (solve_end<NeedSearchAllStages>(depth + 1, board, valid_moves)) {
-                                if (!NeedSearchAllStages) {
+                            if (solve_end<NeedSearchAllAnswers>(depth + 1, board, valid_moves)) {
+                                if (!NeedSearchAllAnswers) {
                                     return true;
                                 }
                             }
@@ -1152,13 +1152,13 @@ Find_Next_Step:
 
         assert(valid_moves.size() == valid_nums.size());
 
-        this->solve<kSearchAllStages>(0, board, valid_nums, valid_moves);
+        this->solve<kSearchAllAnswers>(0, board, valid_nums, valid_moves);
 
         sw.stop();
         elapsed_time = sw.getElapsedMillisec();
 
         if (verbose) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 SudokuHelper::display_answers(this->answers);
             else
                 SudokuHelper::display_board(board);

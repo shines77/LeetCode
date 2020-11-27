@@ -20,16 +20,16 @@
 #include "SudokuSolver.h"
 #include "StopWatch.h"
 
-#define V4_SEARCH_ALL_STAGE     0
+#define V4_SEARCH_ALL_ANSWERS   0
 
 namespace LeetCode {
 namespace Problem_37 {
 namespace v4 {
 
-#if V4_SEARCH_ALL_STAGE
-static const bool kSearchAllStages = true;
+#if V4_SEARCH_ALL_ANSWERS
+static const bool kSearchAllAnswers = true;
 #else
-static const bool kSearchAllStages = false;
+static const bool kSearchAllAnswers = false;
 #endif
 
 class Solution {
@@ -193,7 +193,7 @@ public:
     bool solve(std::vector<std::vector<char>> & board,
                std::list<PosInfo> & valid_moves) {
         if (valid_moves.size() == 0) {
-            if (kSearchAllStages)
+            if (kSearchAllAnswers)
                 this->answers.push_back(board);
             else
                 return true;
@@ -215,7 +215,7 @@ public:
                     board[row][col] = (char)(num + '1');
 
                     if (solve(board, valid_moves)) {
-                        if (!kSearchAllStages)
+                        if (!kSearchAllAnswers)
                             return true;
                     }
 
@@ -265,7 +265,7 @@ public:
 
         sw.stop();
 
-        if (kSearchAllStages)
+        if (kSearchAllAnswers)
             SudokuHelper::display_answers(this->answers);
         else
             SudokuHelper::display_board(board);
