@@ -1,6 +1,6 @@
 
-#ifndef LEETCODE_SUDOKU_SOLVER_V1C_H
-#define LEETCODE_SUDOKU_SOLVER_V1C_H
+#ifndef LEETCODE_SUDOKU_SOLVER_V1D_H
+#define LEETCODE_SUDOKU_SOLVER_V1D_H
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
@@ -19,13 +19,13 @@
 #include "SudokuSolver.h"
 #include "StopWatch.h"
 
-#define V1C_SEARCH_ALL_ANSWERS  0
+#define V1D_SEARCH_ALL_ANSWERS  0
 
 namespace LeetCode {
 namespace Problem_37 {
-namespace v1c {
+namespace v1d {
 
-#if V1C_SEARCH_ALL_ANSWERS
+#if V1D_SEARCH_ALL_ANSWERS
 static const bool kSearchAllAnswers = true;
 #else
 static const bool kSearchAllAnswers = false;
@@ -146,6 +146,10 @@ private:
     int cols_[TotalSize + 1];
     int numbers_[TotalSize + 1];
 
+    SmallBitMatrix2<9, 9>  bit_rows;        // [row][num]
+    SmallBitMatrix2<9, 9>  bit_cols;        // [col][num]
+    SmallBitMatrix2<9, 9>  bit_palaces;     // [palace][num]
+
     std::vector<std::vector<int>> answers_;
 
     static size_t recur_counter;
@@ -189,7 +193,7 @@ public:
     static size_t get_init_counter() { return DancingLinks::init_counter; }
 
 private:
-    size_t get_one_columns(int one_columns[81]) const {
+    size_t get_one_columns(int one_columns[324]) const {
         size_t count = 0;
         for (int i = list_.next[0]; i != 0 ; i = list_.next[i]) {
             if (col_size_[i] == 1) {
@@ -222,6 +226,22 @@ private:
         return min_col_index;
     }
 
+    std::bitset<9> getUsable(size_t row, size_t col) {
+        size_t palace = row / 3 * 3 + col / 3;
+        return ~(this->bit_rows[row] | this->bit_cols[col] | this->bit_palaces[palace]);
+    }
+
+    std::bitset<9> getUsable(size_t row, size_t col, size_t palace) {
+        return ~(this->bit_rows[row] | this->bit_cols[col] | this->bit_palaces[palace]);
+    }
+
+    void fillNum(size_t row, size_t col, size_t num) {
+        size_t palace = row / 3 * 3 + col / 3;
+        this->bit_rows[row].set(num);
+        this->bit_cols[col].set(num);
+        this->bit_palaces[palace].set(num);
+    }
+
 public:
     void init() {
         int cols = this->cols();
@@ -241,9 +261,13 @@ public:
             col_size_[i] = 0;
         }
 
+        this->bit_rows.reset();
+        this->bit_cols.reset();
+        this->bit_palaces.reset();
+
         this->answers_.clear();
         this->answer_.reserve(81);
-#if V1C_SEARCH_ALL_ANSWERS
+#if V1D_SEARCH_ALL_ANSWERS
         this->answers_.clear();
 #endif
         recur_counter = 0;
@@ -255,10 +279,15 @@ public:
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
             for (size_t col = 0; col < line.size(); col++) {
-                if (line[col] == '.') {
+                char val = line[col];
+                if (val == '.') {
                     empties++;
                 }
-            }
+                else {
+                    size_t num = val - '1';
+                    this->fillNum(row, col, num);
+                }
+            }   
         }
 
         // maxRows = filled * 1 + empties * 9;
@@ -274,15 +303,34 @@ public:
             const std::vector<char> & line = board[row];
             assert(Cols == line.size());
             for (size_t col = 0; col < line.size(); col++) {
-                size_t minNum, maxNum;
-                if (line[col] == '.') {
-                    minNum = 0, maxNum = Numbers - 1;
+                size_t palace = row / 3 * 3 + col / 3;
+                char val = line[col];
+                if (val == '.') {
+                    std::bitset<9> numsUsable = getUsable(row, col, palace);
+                    for (size_t number = 0; number <= (Numbers - 1); number++) {
+                        if (numsUsable.test(number)) {
+                            int head = last_idx_;
+                            int index = last_idx_;
+
+                            this->insert(index + 0, row_idx, (int)(0      + row * 9 + col + 1));
+                            this->insert(index + 1, row_idx, (int)(81 * 1 + row * 9 + number + 1));
+                            this->insert(index + 2, row_idx, (int)(81 * 2 + col * 9 + number + 1));
+                            this->insert(index + 3, row_idx, (int)(81 * 3 + palace * 9 + number + 1));
+
+                            this->rows_[row_idx] = (int)row;
+                            this->cols_[row_idx] = (int)col;
+                            this->numbers_[row_idx] = (int)number;
+                            index += 4;
+                            row_idx++;
+
+                            list_.next[index - 1] = head;
+                            list_.prev[head] = index - 1;
+                            last_idx_ = index;
+                        }
+                    }
                 }
                 else {
-                    minNum = maxNum = line[col] - '1';
-                }
-                size_t palace = row / 3 * 3 + col / 3;
-                for (size_t number = minNum; number <= maxNum; number++) {
+                    size_t number = val - '1';
                     int head = last_idx_;
                     int index = last_idx_;
 
@@ -300,10 +348,11 @@ public:
                     list_.next[index - 1] = head;
                     list_.prev[head] = index - 1;
                     last_idx_ = index;
-                }
+                }                
+
             }
         }
-        assert(row_idx == (maxRows + 1));
+        assert(row_idx <= (maxRows + 1));
     }
 
     void insert(int index, int row, int col) {
@@ -396,22 +445,25 @@ public:
     }
 
     bool solve() {
-        int one_columns[82];
+        int one_columns[324];
         size_t columns = get_one_columns(one_columns);
 
-        for (size_t i = 0; i < columns; i++) {
-            int index = one_columns[i];
-            assert(index > 0);
+SOLVE_RETRY:
+        for (int index = list_.next[0]; index != 0 ; index = list_.next[index]) {
+            if (col_size_[index] == 1) {
+                assert(index > 0);
 
-            this->remove(index);
-            for (int row = list_.down[index]; row != index; row = list_.down[row]) {
-                this->answer_.push_back(list_.row[row]);
-                for (int col = list_.next[row]; col != row; col = list_.next[col]) {
-                    this->remove(list_.col[col]);
+                this->remove(index);
+                for (int row = list_.down[index]; row != index; row = list_.down[row]) {
+                    this->answer_.push_back(list_.row[row]);
+                    for (int col = list_.next[row]; col != row; col = list_.next[col]) {
+                        this->remove(list_.col[col]);
+                    }
                 }
-            }
 
-            init_counter++;
+                init_counter++;
+                goto SOLVE_RETRY;
+            }
         }
 
         return this->search();
@@ -577,8 +629,8 @@ public:
     }
 };
 
-} // namespace v1c
+} // namespace v1d
 } // namespace Problem_37
 } // namespace LeetCode
 
-#endif // LEETCODE_SUDOKU_SOLVER_V1C_H
+#endif // LEETCODE_SUDOKU_SOLVER_V1D_H

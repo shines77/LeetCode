@@ -36,9 +36,10 @@ void SudokuSolver::display_answers(std::vector<std::vector<char>> & board,
     }
 }
 
-double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbose)
+bool Solution::solveSudoku(std::vector<std::vector<char>> & board,
+                           double & elapsed_time,
+                           bool verbose)
 {
-    double elapsed_time;
     if (verbose) {
         SudokuHelper::display_board(board, true);
     }
@@ -52,11 +53,11 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
 
 #if 1
     DancingLinks dancingLinks(solver.getDlkMatrix(), (SudokuHelper::TotalSize + 1) * 4 + 1);
-    //dancingLinks.solve_non_recursive();
-    dancingLinks.solve(recur_counter);
+    //bool success = dancingLinks.solve_non_recursive();
+    bool success = dancingLinks.solve(recur_counter);
 #else
     DLX dancingLinks(solver.getDlkMatrix(), SudokuHelper::TotalSize * 4 + 1);
-    dancingLinks.solve();
+    bool success = dancingLinks.solve();
 #endif
 
     sw.stop();
@@ -71,5 +72,5 @@ double Solution::solveSudoku(std::vector<std::vector<char>> & board, bool verbos
                elapsed_time, (uint32_t)recur_counter);
     }
 
-    return elapsed_time;
+    return success;
 }
