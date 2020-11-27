@@ -189,7 +189,7 @@ public:
     static size_t get_init_counter() { return DancingLinks::init_counter; }
 
 private:
-    size_t get_one_columns(int one_columns[81]) const {
+    size_t get_one_columns(int one_columns[324]) const {
         size_t count = 0;
         for (int i = list_.next[0]; i != 0 ; i = list_.next[i]) {
             if (col_size_[i] == 1) {
@@ -396,7 +396,7 @@ public:
     }
 
     bool solve() {
-        int one_columns[82];
+        int one_columns[324];
         size_t columns = get_one_columns(one_columns);
 
         for (size_t i = 0; i < columns; i++) {
