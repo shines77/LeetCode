@@ -43,10 +43,10 @@ static const bool kEnableV1dSolution =  true;
 static const bool kEnableV2Solution =   false;
 static const bool kEnableV3Solution =   false;
 static const bool kEnableV4Solution =   false;
-static const bool kEnableV5Solution =   false;
-static const bool kEnableV6Solution =   false;
+static const bool kEnableV5Solution =   true;
+static const bool kEnableV6Solution =   true;
 static const bool kEnableV7Solution =   false;
-static const bool kEnableV8Solution =   false;
+static const bool kEnableV8Solution =   true;
 static const bool kEnableIceSudoku  =   false;
 
 // Index: [0 - 4]
@@ -162,21 +162,70 @@ static SudokuBoard test_case[] = {
         ".9. | ... | 4..",
     },
 
+
+    //
+    // 5 #
+    //
+    {
+        "8.. | ... | ...",
+        "..3 | 6.. | ...",
+        ".7. | .9. | 2..",
+
+        ".5. | ..7 | ...",
+        "... | .45 | 7..",
+        "... | 1.. | .3.",
+
+        "..1 | ... | ..8",
+        "..8 | 5.. | .1.",
+        ".9. | ... | 4..",
+    },
+
+    //
+    // 6 #
+    //
+    // Hardcore (filled = 16)
+    //
+    {
+        "... | ... | .13",
+        ".2. | 5.. | ...",
+        "... | ... | ...",
+        "1.3 | ... | .7.",
+        "... | 8.2 | ...",
+        "..4 | ... | ...",
+        "... | .4. | 5..",
+        "67. | ... | 2..",
+        "... | .1. | ...",
+    },
+
+    /*
+    {
+        ".......13",
+        ".2.5.....",
+        ".........",
+        "1.3....7.",
+        "...8.2...",
+        "..4......",
+        "...34.5..",
+        "67....2..",
+        "....1....",
+    },
+    *///
+
     /*************************************************
 
     // Empty board format (For user custom and copy)
     {
-        '... | ... | ...",
-        '... | ... | ...",
-        '... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
 
-        '... | ... | ...",
-        '... | ... | ...",
-        '... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
 
-        '... | ... | ...",
-        '... | ... | ...",
-        '... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
+        "... | ... | ...",
     },
 
     **************************************************/
@@ -471,7 +520,7 @@ void test_sudoku_files_dlx(const char * filename, const char * name)
                     if (success) {
                         puzzleCount++;
 #ifndef NDEBUG
-                        if (puzzleCount > 60000)
+                        if (puzzleCount > 1000)
                             break;
 #endif
                     }
@@ -515,7 +564,7 @@ void test_sudoku_files_dfs(const char * filename, const char * name)
                     total_time += elapsed_time;
                     puzzleCount++;
 #ifndef NDEBUG
-                    if (puzzleCount > 100)
+                    if (puzzleCount > 1000)
                         break;
 #endif
                 }
@@ -558,7 +607,7 @@ void test_sudoku_files_dlx_v1b(const char * filename, const char * name)
                     if (success) {
                         puzzleCount++;
 #ifndef NDEBUG
-                        if (puzzleCount > 100)
+                        if (puzzleCount > 1000)
                             break;
 #endif
                     }

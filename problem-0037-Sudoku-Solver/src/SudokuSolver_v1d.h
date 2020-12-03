@@ -215,10 +215,12 @@ private:
             int col_size = col_size_[i];
             if (col_size < min_col) {
                 assert(col_size >= 0);
-                if (col_size <= 0)
-                    return 0;
-                if (col_size == 1)
-                    return i;
+                if (col_size <= 1) {
+                    if (col_size == 0)
+                        return 0;
+                    else
+                        return i;
+                }
                 min_col = col_size;
                 min_col_index = i;
             }
@@ -380,9 +382,10 @@ public:
         list_.prev[next] = prev;
 
         for (int row = list_.down[index]; row != index; row = list_.down[row]) {
+            int up, down;
             for (int col = list_.next[row]; col != row; col = list_.next[col]) {
-                int up = list_.up[col];
-                int down = list_.down[col];
+                up = list_.up[col];
+                down = list_.down[col];
                 list_.down[up] = down;
                 list_.up[down] = up;
                 assert(col_size_[list_.col[col]] > 0);
@@ -411,10 +414,14 @@ public:
 
     bool search() {
         if (this->is_empty()) {
-            if (kSearchAllAnswers)
+            if (kSearchAllAnswers) {
                 this->answers_.push_back(this->answer_);
-            else
+                if (this->answers_.size() > 1)
+                    return true;
+            }
+            else {
                 return true;
+            }
         }
 
         recur_counter++;
@@ -429,8 +436,13 @@ public:
                 }
 
                 if (this->search()) {
-                    if (!kSearchAllAnswers)
+                    if (!kSearchAllAnswers) {
                         return true;
+                    }
+                    else {
+                        if (this->answers_.size() > 1)
+                            return true;
+                    }
                 }
 
                 for (int col = list_.prev[row]; col != row; col = list_.prev[col]) {
@@ -572,15 +584,19 @@ BackTracking_Entry:
 
     void display_answers(std::vector<std::vector<char>> & board) {
         printf("Total answers: %d\n\n", (int)this->get_answers().size());
+#if 0
         int i = 0;
         for (auto answer : this->get_answers()) {
             SudokuHelper::clear_board(board);
             for (auto idx : answer) {
-                board[this->rows_[idx]][this->cols_[idx]] = (char)this->numbers_[idx] + '1';
+                if (idx > 0) {
+                    board[this->rows_[idx]][this->cols_[idx]] = (char)this->numbers_[idx] + '1';
+                }
             }
             SudokuHelper::display_board(board, false, i);
             i++;
         }
+#endif
     }
 };
 

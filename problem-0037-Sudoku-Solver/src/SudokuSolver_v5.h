@@ -234,7 +234,7 @@ public:
     int getNextFillCell(SmallFixedDualList<PosInfo, 81> & valid_moves) {
         assert(valid_moves.size() > 1);
 
-        if (valid_moves.size() > 30) {
+        if (valid_moves.size() > 32) {
             for (size_t id = 0; id < 9; id++) {
                 if (this->rows[id].count() == 8) {
                     size_t numBits = this->rows[id].to_ullong();
@@ -318,7 +318,7 @@ public:
             pos += (9 - 3);
         }
 
-        this->nums_usable[cell].reset();
+        //this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>
@@ -326,7 +326,7 @@ public:
         size_t cell_y = row * 9;
         size_t palace_row = row / 3 * 3;
         for (size_t x = 0; x < Cols; x++) {
-            if (isUndo || x != col) {
+            if (isUndo || (x != col)) {
                 if (!this->cell_filled[row].test(x)) {
                     size_t palace = palace_row + x / 3;
                     this->nums_usable[cell_y + x] = getUsable(row, x, palace);
@@ -375,7 +375,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
-        this->cell_filled[row].set(col);
+        //this->cell_filled[row].set(col);
         updateUsable(row, col, num);
     }
 
@@ -384,8 +384,8 @@ public:
         this->rows[row].reset(num);
         this->cols[col].reset(num);
         this->palaces[palace].reset(num);
-        this->cell_filled[row].reset(col);
-        updateUndoUsable<true>(row, col);
+        //this->cell_filled[row].reset(col);
+        updateUndoUsable<false>(row, col);
     }
 
     bool solve(std::vector<std::vector<char>> & board,
@@ -404,7 +404,10 @@ public:
             size_t row = valid_moves[move_idx].row;
             size_t col = valid_moves[move_idx].col;
             valid_moves.remove(move_idx);
-            const std::bitset<9> & fillNums = this->nums_usable[row * 9 + col];
+            size_t cell = row * 9 + col;
+            std::bitset<9> fillNums = this->nums_usable[cell];
+            this->nums_usable[cell].reset();
+            this->cell_filled[row].set(col);
             for (size_t num = 0; num < fillNums.size(); num++) {
                 // Get usable numbers
                 if (fillNums.test(num)) {
@@ -420,6 +423,8 @@ public:
                     undoFillNum(row, col, num);
                 }
             }
+            this->cell_filled[row].reset(col);
+            this->nums_usable[cell] = fillNums;
             valid_moves.push_front(move_idx);
         }
 
