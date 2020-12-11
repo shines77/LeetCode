@@ -50,61 +50,61 @@ static const size_t kEndGameEmptiesThreshold = 42;
 // Print debug trace ?
 static const bool kEnableDebugTrace = false;
 
-struct PalaceIdInfo {
+struct PalaceNeighbor {
     int rows[2];
     int cols[2];
 };
 
-static const PalaceIdInfo sPalaceIdInfo[9] = {
-    // Palace id: 0
+static const PalaceNeighbor sPalaceNeighbor[9] = {
+    // Palace # 0
     {
         { 1, 2 },
         { 3, 6 }
     },
 
-    // Palace id: 1
+    // Palace # 1
     {
         { 0, 2 },
         { 4, 7 }
     },
 
-    // Palace id: 2
+    // Palace # 2
     {
         { 0, 1 },
         { 5, 8 }
     },
 
-    // Palace id: 3
+    // Palace # 3
     {
         { 4, 5 },
         { 0, 6 }
     },
 
-    // Palace id: 4
+    // Palace # 4
     {
         { 3, 5 },
         { 1, 7 }
     },
 
-    // Palace id: 5
+    // Palace # 5
     {
         { 3, 4 },
         { 2, 8 }
     },
 
-    // Palace id: 6
+    // Palace # 6
     {
         { 7, 8 },
         { 0, 3 }
     },
 
-    // Palace id: 7
+    // Palace # 7
     {
         { 6, 8 },
         { 1, 4 }
     },
 
-    // Palace id: 8
+    // Palace # 8
     {
         { 6, 7 },
         { 2, 5 }
@@ -139,7 +139,7 @@ private:
     node_type        list_[kCapacity];
 
     void init() {
-        this->list_[0].prev = 1;
+        this->list_[0].prev = 0;
         this->list_[0].next = 1;
     }
 
@@ -320,7 +320,7 @@ private:
     SmallBitMatrix2<9, 9>    rows;          // [row][num]
     SmallBitMatrix2<9, 9>    cols;          // [col][num]
     SmallBitMatrix2<9, 9>    palaces;       // [palace][num]
-    SmallBitMatrix2<9, 9>    cell_filled;   // [row][col]
+    std::bitset<81>          cell_filled;   // [row * 9 + col]
     SmallBitMatrix2<81, 9>   nums_usable;   // [row * 9 + col][num]
 
     //SmallBitMatrix3<9, 9, 3> palace_rows;   // [palace][num][row]
@@ -479,7 +479,7 @@ public:
     }
 
     std::bitset<9> getUsableStrict(size_t row, size_t col) {
-        if (!this->cell_filled[row].test(col)) {
+        if (!this->cell_filled.test(row * 9 + col)) {
             size_t palace = row / 3 * 3 + col / 3;
             return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
         }
@@ -489,7 +489,7 @@ public:
     }
 
     std::bitset<9> getUsableStrict(size_t row, size_t col, size_t palace) {
-        if (!this->cell_filled[row].test(col))
+        if (!this->cell_filled.test(row * 9 + col))
             return ~(this->rows[row] | this->cols[col] | this->palaces[palace]);
         else
             return 0;
@@ -545,7 +545,7 @@ public:
             }
 
             for (size_t idx = 0; idx < 2; idx++) {
-                size_t palace_row_id = sPalaceIdInfo[palace].rows[idx];
+                size_t palace_row_id = sPalaceNeighbor[palace].rows[idx];
                 if (!this->palaces[palace_row_id].test(num)) {
 #if 0
                     if (this->palace_nums[palace_row_id][num].test(palace_row * 3 + 0)) {
@@ -581,7 +581,7 @@ public:
 #endif
                 }
 
-                size_t palace_col_id = sPalaceIdInfo[palace].cols[idx];
+                size_t palace_col_id = sPalaceNeighbor[palace].cols[idx];
                 if (!this->palaces[palace_col_id].test(num)) {
 #if 0
                     if (this->palace_nums[palace_col_id][num].test(0 * 3 + palace_col)) {
@@ -631,7 +631,7 @@ public:
             pos += (9 - 3);
         }
 
-        this->nums_usable[cell].reset();
+        //this->nums_usable[cell].reset();
     }
 
     template <bool isUndo = true>
@@ -640,7 +640,7 @@ public:
         size_t palace_row = row / 3 * 3;
         for (size_t x = 0; x < Cols; x++) {
             if (isUndo || (x != col)) {
-                if (!this->cell_filled[row].test(x)) {
+                if (!this->cell_filled.test(row * 9 + x)) {
                     size_t palace = palace_row + x / 3;
                     this->nums_usable[cell_y + x] = getUsable(row, x, palace);
                 }
@@ -651,7 +651,7 @@ public:
         size_t palace_col = col / 3;
         for (size_t y = 0; y < Rows; y++) {
             if (y != row) {
-                if (!this->cell_filled[y].test(col)) {
+                if (!this->cell_filled.test(y * 9 + col)) {
                     size_t palace = y / 3 * 3 + palace_col;
                     this->nums_usable[y * 9 + cell_x] = getUsable(y, col, palace);
                 }
@@ -665,7 +665,7 @@ public:
         for (size_t y = 0; y < (Rows / 3); y++) {
             for (size_t x = 0; x < (Cols / 3); x++) {
                 if (pos != cell) {
-                    if (!this->cell_filled[palace_row + y].test(palace_col + x)) {
+                    if (!this->cell_filled.test((palace_row + y) * 9 + (palace_col + x))) {
                         this->nums_usable[pos] = getUsable(palace_row + y, palace_col + x, palace);
                     }
                 }
@@ -714,7 +714,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
-        this->cell_filled[row].set(col);
+        this->cell_filled.set(row * 9 + col);
     }
 
     template <bool isEndGame = false>
@@ -723,7 +723,7 @@ public:
         this->rows[row].set(num);
         this->cols[col].set(num);
         this->palaces[palace].set(num);
-        this->cell_filled[row].set(col);
+        //this->cell_filled.set(row * 9 + col);
         updateUsable<isEndGame>(row, col, num);
 #if V8_USE_MOVE_PATH
         this->move_path.push_back(MoveInfo((uint32_t)row, (uint32_t)col, (uint32_t)(num + 1)));
@@ -736,34 +736,34 @@ public:
         this->rows[row].reset(num);
         this->cols[col].reset(num);
         this->palaces[palace].reset(num);
-        this->cell_filled[row].reset(col);
-        updateUndoUsable<true>(row, col, num);
+        //this->cell_filled.reset(row * 9 + col);
+        updateUndoUsable<false>(row, col, num);
 #if V8_USE_MOVE_PATH
         this->move_path.pop_back();
 #endif
     }
 
-    void backupPalaceNumsStatus(size_t depth, size_t palace, size_t num) {
+    void savePalaceNumsState(size_t depth, size_t palace, size_t num) {
         SmallBitMatrix2<5, 9> & save_status = this->save_palace_nums[depth];
         save_status[0] = this->palace_nums[palace][num];
 
-        const PalaceIdInfo & idInfo = sPalaceIdInfo[palace];
-        save_status[1] = this->palace_nums[idInfo.rows[0]][num];
-        save_status[2] = this->palace_nums[idInfo.rows[1]][num];
-        save_status[3] = this->palace_nums[idInfo.cols[0]][num];
-        save_status[4] = this->palace_nums[idInfo.cols[1]][num];
+        const PalaceNeighbor & neighbor = sPalaceNeighbor[palace];
+        save_status[1] = this->palace_nums[neighbor.rows[0]][num];
+        save_status[2] = this->palace_nums[neighbor.rows[1]][num];
+        save_status[3] = this->palace_nums[neighbor.cols[0]][num];
+        save_status[4] = this->palace_nums[neighbor.cols[1]][num];
     }
 
-    void restorePalaceNumsStatus(size_t depth, size_t row, size_t col,
+    void restorePalaceNumsState(size_t depth, size_t row, size_t col,
                                  size_t palace, size_t palace_pos, size_t num) {
         const SmallBitMatrix2<5, 9> & save_status = this->save_palace_nums[depth];
         this->palace_nums[palace][num] = save_status[0];
 
-        const PalaceIdInfo & idInfo = sPalaceIdInfo[palace];
-        this->palace_nums[idInfo.rows[0]][num] = save_status[1];
-        this->palace_nums[idInfo.rows[1]][num] = save_status[2];
-        this->palace_nums[idInfo.cols[0]][num] = save_status[3];
-        this->palace_nums[idInfo.cols[1]][num] = save_status[4];
+        const PalaceNeighbor & neighbor = sPalaceNeighbor[palace];
+        this->palace_nums[neighbor.rows[0]][num] = save_status[1];
+        this->palace_nums[neighbor.rows[1]][num] = save_status[2];
+        this->palace_nums[neighbor.cols[0]][num] = save_status[3];
+        this->palace_nums[neighbor.cols[1]][num] = save_status[4];
 
         std::bitset<9> numsUsable = getUsable(row, col, palace);
         SmallBitMatrix2<9, 9> & numbers_pos = this->palace_nums[palace];
@@ -774,11 +774,11 @@ public:
         }
     }
 
-    void restorePalaceNumsStatus(size_t depth,
+    void restorePalaceNumsState(size_t depth,
                                  size_t row, size_t col,
                                  size_t palace, size_t num) {
         size_t palace_pos = (row % 3) * 3 + (col % 3);
-        restorePalaceNumsStatus(depth, row, col, palace, palace_pos, num);
+        restorePalaceNumsState(depth, row, col, palace, palace_pos, num);
     }
 
     template <bool NeedSearchAllAnswers = false>
@@ -802,10 +802,14 @@ public:
             size_t col = valid_moves[move_idx].col;
             valid_moves.remove(move_idx);
 
-            std::bitset<9> validNums = this->nums_usable[row * 9 + col];
+            size_t cell = row * 9 + col;
+            std::bitset<9> validNums = this->nums_usable[cell];
             size_t num_count = validNums.count();
             assert(num_count != 0);
             if (num_count == 1) {
+                this->nums_usable[cell].reset();
+                this->cell_filled.set(cell);
+
                 size_t numBits = validNums.to_ullong();
                 size_t num = jstd::BitScan::bsf(numBits);
                 doFillNum<true>(row, col, num);
@@ -821,8 +825,13 @@ public:
 
                 board[row][col] = '.';
                 undoFillNum<true>(row, col, num);
+
+                this->cell_filled.reset(cell);
+                this->nums_usable[cell] = validNums;
             }
             else {
+                this->nums_usable[cell].reset();
+                this->cell_filled.set(cell);
                 size_t count = 0;
                 for (size_t num = 0; num < validNums.size(); num++) {
                     // Get usable numbers
@@ -846,6 +855,8 @@ public:
                             break;
                     }
                 }
+                this->cell_filled.reset(cell);
+                this->nums_usable[cell] = validNums;
             }
 
             valid_moves.push_front(move_idx);
@@ -880,6 +891,8 @@ public:
                 valid_nums.remove(move_idx);
 
                 std::bitset<9> validPos = this->palace_nums[palace][num];
+                this->palace_nums[palace][num].reset();
+
                 size_t pos_count = validPos.count();
                 size_t count = 0;
                 assert(validPos.count() != 0);
@@ -888,10 +901,14 @@ public:
                     if (validPos.test(pos)) {
                         size_t row = valid_nums[move_idx].palace_row + (pos / 3);
                         size_t col = valid_nums[move_idx].palace_col + (pos % 3);
-                        // Save current palace bitset status
-                        backupPalaceNumsStatus(depth, palace, num);
+                        size_t cell = row * 9 + col;
+                        this->cell_filled.set(cell);
+
+                        // Save current palace bitset state
+                        savePalaceNumsState(depth, palace, num);
 
                         doFillNum<false>(row, col, num);
+                        this->nums_usable[cell].reset();
 
                         int pos_index = this->row_col_index[row * 9 + col];
                         assert(pos_index > 0);
@@ -932,7 +949,10 @@ public:
 
                         undoFillNum<false>(row, col, num);
 
-                        restorePalaceNumsStatus(depth, row, col, palace, pos, num);
+                        restorePalaceNumsState(depth, row, col, palace, pos, num);
+
+                        this->nums_usable[cell] = getUsable(row, col, palace);
+                        this->cell_filled.reset(cell);
 
                         count++;
                         if (count >= pos_count)
@@ -940,6 +960,7 @@ public:
                     }
                 }
 
+                this->palace_nums[palace][num] = validPos;
                 valid_nums.push_front(move_idx);
                 debug_trace(">>>> [depth = %d], backtracking.\n\n", (int)depth);
             }
@@ -953,15 +974,19 @@ public:
                 size_t palace = valid_moves[move_idx].palace;
                 valid_moves.remove(move_idx);
 
-                std::bitset<9> validNums = this->nums_usable[row * 9 + col];
+                size_t cell = row * 9 + col;
+                std::bitset<9> validNums = this->nums_usable[cell];
+                this->nums_usable[cell].reset();
+                this->cell_filled.set(cell);
+
                 size_t num_count = validNums.count();
                 size_t count = 0;
                 assert(validNums.count() != 0);
                 for (size_t num = 0; num < validNums.size(); num++) {
                     // Get usable numbers
                     if (validNums.test(num)) {
-                        // Save current palace bitset status
-                        backupPalaceNumsStatus(depth, palace, num);
+                        // Save current palace bitset state
+                        savePalaceNumsState(depth, palace, num);
 
                         doFillNum<false>(row, col, num);
 
@@ -1004,13 +1029,16 @@ public:
 
                         undoFillNum<false>(row, col, num);
 
-                        restorePalaceNumsStatus(depth, row, col, palace, num);
+                        restorePalaceNumsState(depth, row, col, palace, num);
 
                         count++;
                         if (count >= num_count)
                             break;
                     }
                 }
+
+                this->cell_filled.reset(cell);
+                this->nums_usable[cell] = validNums;
 
                 valid_moves.push_front(move_idx);
                 debug_trace(">>>> [depth = %d] backtracking.\n\n", (int)depth);

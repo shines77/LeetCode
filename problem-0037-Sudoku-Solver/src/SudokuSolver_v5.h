@@ -159,12 +159,22 @@ public:
     static size_t recur_counter;
 
     struct PosInfo {
-        uint32_t row;
-        uint32_t col;
+        uint16_t row;
+        uint16_t col;
 
         PosInfo() = default;
-        PosInfo(size_t row, size_t col) : row((uint32_t)row), col((uint32_t)col) {};
+        PosInfo(size_t row, size_t col, bool is_fast_ctor)
+            : row((uint16_t)row), col((uint16_t)col) {
+        }
+        PosInfo(size_t row, size_t col)
+            : row((uint16_t)row), col((uint16_t)col) {
+            //this->palace = (uint16_t)(row / 3 * 3 + col / 3);
+        }
         ~PosInfo() = default;
+
+        bool operator == (const PosInfo & rhs) const {
+            return ((this->row == rhs.row) && (this->col == rhs.col));
+        }
     };
 
 private:
@@ -172,6 +182,8 @@ private:
     SmallBitMatrix2<9, 9>  cols;        // [col][num]
     SmallBitMatrix2<9, 9>  palaces;     // [palace][num]
     SmallBitMatrix2<9, 9>  cell_filled; // [row][col]
+    SmallBitMatrix2<81, 9> rows_pos;    // [row][num][col]
+    SmallBitMatrix2<81, 9> cols_pos;    // [col][num][row]
     SmallBitMatrix2<81, 9> nums_usable; // [row * 9 + col][num]
 
     uint8_t row_col_index[88];
@@ -233,7 +245,7 @@ public:
 
     int getNextFillCell(SmallFixedDualList<PosInfo, 81> & valid_moves) {
         assert(valid_moves.size() > 1);
-
+#if 0
         if (valid_moves.size() > 32) {
             for (size_t id = 0; id < 9; id++) {
                 if (this->rows[id].count() == 8) {
@@ -256,7 +268,7 @@ public:
                 }
             }
         }
-
+#endif
         size_t minUsable = size_t(-1);
         int min_index = -1;
         for (int index = valid_moves.begin();
@@ -405,12 +417,12 @@ public:
             size_t col = valid_moves[move_idx].col;
             valid_moves.remove(move_idx);
             size_t cell = row * 9 + col;
-            std::bitset<9> fillNums = this->nums_usable[cell];
+            std::bitset<9> validNums = this->nums_usable[cell];
             this->nums_usable[cell].reset();
             this->cell_filled[row].set(col);
-            for (size_t num = 0; num < fillNums.size(); num++) {
+            for (size_t num = 0; num < validNums.size(); num++) {
                 // Get usable numbers
-                if (fillNums.test(num)) {
+                if (validNums.test(num)) {
                     doFillNum(row, col, num);
                     board[row][col] = (char)(num + '1');
 
@@ -424,7 +436,7 @@ public:
                 }
             }
             this->cell_filled[row].reset(col);
-            this->nums_usable[cell] = fillNums;
+            this->nums_usable[cell] = validNums;
             valid_moves.push_front(move_idx);
         }
 

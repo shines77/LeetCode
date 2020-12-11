@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <iostream>
 #include <fstream>
+#include <cstring>      // For std::memset()
 #include <vector>
 #include <bitset>
 
