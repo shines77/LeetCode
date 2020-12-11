@@ -34,9 +34,6 @@
     <ClInclude Include="src\ice_sudoku_solver.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\BitScan.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\SudokuSolver_v7.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -56,6 +53,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\SudokuSolver_v1d.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BitUtils.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

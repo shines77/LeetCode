@@ -21,6 +21,8 @@
 #include <type_traits>
 #include <cassert>
 
+#include "BitUtils.h"
+
 #define MATRIX_USE_STD_BITSET       0
 #define MATRIX_USE_SMALL_BITSET     1
 #define MATRIX_USE_BITMAP           2

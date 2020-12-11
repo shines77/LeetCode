@@ -18,7 +18,7 @@
 #include <bitset>
 
 #include "SudokuSolver.h"
-#include "BitScan.h"
+#include "BitUtils.h"
 #include "StopWatch.h"
 
 #define V5_SEARCH_ALL_ANSWERS   0
@@ -250,19 +250,19 @@ public:
             for (size_t id = 0; id < 9; id++) {
                 if (this->rows[id].count() == 8) {
                     size_t numBits = this->rows[id].to_ullong();
-                    size_t num = jstd::BitScan::bsf(~numBits);
+                    size_t num = jstd::BitUtils::bsf(~numBits);
                     assert(num < SudokuHelper::Numbers);
                     return findRowsNumberIndex(valid_moves, id, num);
                 }
                 else if (this->cols[id].count() == 8) {
                     size_t numBits = this->cols[id].to_ullong();
-                    size_t num = jstd::BitScan::bsf(~numBits);
+                    size_t num = jstd::BitUtils::bsf(~numBits);
                     assert(num < SudokuHelper::Numbers);
                     return findColsNumberIndex(valid_moves, id, num);
                 }
                 else if (this->palaces[id].count() == 8) {
                     size_t numBits = this->palaces[id].to_ullong();
-                    size_t num = jstd::BitScan::bsf(~numBits);
+                    size_t num = jstd::BitUtils::bsf(~numBits);
                     assert(num < SudokuHelper::Numbers);
                     return findPalacesNumberIndex(valid_moves, id, num);
                 }

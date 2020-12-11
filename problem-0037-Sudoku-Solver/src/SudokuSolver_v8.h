@@ -19,7 +19,7 @@
 #include <bitset>
 
 #include "SudokuSolver.h"
-#include "BitScan.h"
+#include "BitUtils.h"
 #include "StopWatch.h"
 
 #define V8_SEARCH_ALL_ANSWERS   0
@@ -811,7 +811,7 @@ public:
                 this->cell_filled.set(cell);
 
                 size_t numBits = validNums.to_ullong();
-                size_t num = jstd::BitScan::bsf(numBits);
+                size_t num = jstd::BitUtils::bsf(numBits);
                 doFillNum<true>(row, col, num);
                 debug_trace(">>   row: %d, col: %d, num: %d\n\n", (int)row, (int)col, (int)num);
 
