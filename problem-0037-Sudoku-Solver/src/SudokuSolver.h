@@ -62,7 +62,7 @@ private:
 public:
     SmallBitSet() noexcept {
         static_assert((Bits != 0), "SmallBitSet<Bits>: Bits can not be 0 size.");
-        this->clear();
+        this->reset();
     }
 
     SmallBitSet(dont_init_t & dont_init) noexcept {
@@ -330,18 +330,6 @@ public:
             }
         }
         return true;
-    }
-
-    this_type & clear() noexcept {
-        if (kUnits <= 8) {
-            for (size_t i = 0; i < kUnits; i++) {
-                this->array_[i] = 0;
-            }
-        }
-        else {
-            std::memset(this->array_, 0, kUnits * sizeof(unit_type));
-        }
-        return (*this);
     }
 
     this_type & fill(size_t value) noexcept {
