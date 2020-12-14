@@ -659,7 +659,7 @@ int main(int argc, char * argv[])
             test_sudoku_files_dlx<v1d::Solution>(filename, "v1d");
             //test_sudoku_files_dfs<v5::Solution>(filename, "v5");
             //test_sudoku_files_dfs<v6::Solution>(filename, "v6");
-            //test_sudoku_files_dfs<v8::Solution>(filename, "v8");
+            test_sudoku_files_dfs<v8::Solution>(filename, "v8");
         }
     }
 
