@@ -180,7 +180,7 @@ public:
 
     bool is_empty() const { return (list_.next[0] == 0); }
 
-    int cols() const { return (int)SudokuHelper::TotalConditions; }
+    int cols() const { return (int)SudokuHelper::TotalLiterals; }
 
     const std::vector<int> &              get_answer() const  { return this->answer_; }
     const std::vector<std::vector<int>> & get_answers() const { return this->answers_; }

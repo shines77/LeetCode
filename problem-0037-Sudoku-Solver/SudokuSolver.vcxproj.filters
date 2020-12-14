@@ -58,6 +58,9 @@
     <ClInclude Include="src\BitUtils.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\BitSet.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Solution.cpp">

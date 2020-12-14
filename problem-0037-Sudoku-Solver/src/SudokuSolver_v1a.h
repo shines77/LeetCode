@@ -42,21 +42,22 @@ public:
 
     static const size_t TotalSize = Rows * Cols * Numbers;
 
-    static const size_t TotalConditions0 = 0;
-    static const size_t TotalConditions1 = Rows * Cols;
-    static const size_t TotalConditions2 = Rows * Numbers;
-    static const size_t TotalConditions3 = Cols * Numbers;
-    static const size_t TotalConditions4 = Palaces * Numbers;
+    static const size_t TotalCellLiterals = Rows * Cols;
+    static const size_t TotalRowLiterals = Rows * Numbers;
+    static const size_t TotalColLiterals = Cols * Numbers;
+    static const size_t TotalBoxLiterals = Palaces * Numbers;
 
-    static const size_t TotalConditions01 = TotalConditions0  + TotalConditions1;
-    static const size_t TotalConditions02 = TotalConditions01 + TotalConditions2;
-    static const size_t TotalConditions03 = TotalConditions02 + TotalConditions3;
-    static const size_t TotalConditions04 = TotalConditions03 + TotalConditions4;
+    static const size_t TotalLiterals =
+        TotalCellLiterals + TotalRowLiterals + TotalColLiterals + TotalBoxLiterals;
 
-    static const size_t TotalConditions =
-        TotalConditions1 + TotalConditions2 + TotalConditions3 + TotalConditions4;
+    static const size_t LiteralFirst     = 0;
+    static const size_t CellLiteralFirst = LiteralFirst;
+    static const size_t RowLiteralFirst  = CellLiteralFirst + TotalCellLiterals;
+    static const size_t ColLiteralFirst  = RowLiteralFirst + TotalRowLiterals;
+    static const size_t BoxLiteralFirst  = ColLiteralFirst + TotalColLiterals;
+    static const size_t LiteralLast      = BoxLiteralFirst + TotalBoxLiterals;
 
-    typedef SmallBitMatrix<TotalSize, TotalConditions> matrix_type;
+    typedef SmallBitMatrix<TotalSize, TotalLiterals> matrix_type;
 
 private:
     matrix_type matrix;
@@ -105,7 +106,7 @@ private:
         this->matrix.setRows(maxRows);
 
         size_t index = 0;
-        this->matrix.clear();
+        this->matrix.reset();
         assert(Rows == board.size());
         for (size_t row = 0; row < board.size(); row++) {
             const std::vector<char> & line = board[row];
