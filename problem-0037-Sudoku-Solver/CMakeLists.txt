@@ -22,7 +22,7 @@ message("----------------------------------")
 
 if (NOT MSVC)
     ## For C_FLAGS
-    set(CMAKE_C_FLAGS_DEFAULT "${CMAKE_C_FLAGS} -std=c90 -Wall -Wno-unused-function -Wno-deprecated-declarations -Wno-unused-variable -fPIC")
+    set(CMAKE_C_FLAGS_DEFAULT "${CMAKE_C_FLAGS} -std=c99 -Wall -Wno-unused-function -Wno-deprecated-declarations -Wno-unused-variable -fPIC")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_DEFAULT} -O3 -DNDEBUG")
     set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEFAULT} -g -pg -D_DEBUG")
     ## For CXX_FLAGS
