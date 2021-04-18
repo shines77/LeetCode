@@ -262,6 +262,7 @@ class InvoiceBalance
 private:
     double          total_price_;
     double          fluctuation_;
+    double          min_price_error_;
 
     size_t          goods_count_;
 
@@ -271,7 +272,8 @@ private:
 
 public:
     InvoiceBalance(double total_price, double fluctuation)
-        : total_price_(total_price), fluctuation_(fluctuation), goods_count_(0) {
+        : total_price_(total_price), fluctuation_(fluctuation),
+          min_price_error_(std::numeric_limits<double>::max()), goods_count_(0) {
     }
 
     virtual ~InvoiceBalance() {
@@ -297,7 +299,7 @@ public:
     }
 
 private:
-    double calc_total_price(double total_price, size_t goods_count,
+    double calc_total_price(size_t goods_count,
                             double goods_price[], size_t goods_amount[],
                             double goods_money[]) {
         double actual_total_price = 0.0;
@@ -309,9 +311,9 @@ private:
         return actual_total_price;
     }
 
-    double calc_total_price(double total_price, GoodsInvoice & invoice) {
-        return calc_total_price(total_price, invoice.count, invoice.prices,
-                                             invoice.amounts, invoice.moneys);
+    double calc_total_price(GoodsInvoice & invoice) {
+        return calc_total_price(invoice.count, invoice.prices,
+                                invoice.amounts, invoice.moneys);
     }
 
     double calc_min_total_price(size_t idx, double total_price,
@@ -326,7 +328,7 @@ private:
     }
 
     int recalc_max_goods_amount(size_t idx) {
-        double actual_total_price = calc_total_price(this->total_price_, this->invoice_);
+        double actual_total_price = calc_total_price(this->invoice_);
         double min_total_price = calc_min_total_price(idx, this->total_price_,
                                                       this->invoice_.count, this->invoice_.prices);
         return (int)((this->total_price_ - actual_total_price - min_total_price) /
@@ -346,15 +348,24 @@ private:
         return ((count == 1) ? padding_idx : size_t(-1));
     }
 
-    int adjust_price_and_count(double & price_error,
-                               double total_price, double fluctuation,
+    bool record_min_price_error(double price_error, const GoodsInvoice & invoice) {
+        bool is_better = false;
+        if (abs(price_error) < abs(this->min_price_error_)) {
+            this->min_price_error_ = price_error;
+            this->best_answer_ = invoice;
+            is_better = true;
+        }
+        return is_better;
+    }
+
+    int adjust_price_and_count(double total_price, double fluctuation,
                                GoodsInvoice & invoice) {
         int result = 0;
         size_t padding_idx = find_padding_idx(invoice.count, invoice.amounts);
         if (padding_idx == size_t(-1)) {
             return -1;
         }
-        double actual_total_price = calc_total_price(total_price, invoice);
+        double actual_total_price = calc_total_price(invoice);
         if (actual_total_price <= total_price) {
             ptrdiff_t padding_amount = (ptrdiff_t)((total_price - actual_total_price) / invoice.prices[padding_idx]);
             invoice.amounts[padding_idx] = padding_amount;
@@ -363,9 +374,20 @@ private:
             return -1;
         }
 
-        actual_total_price = calc_total_price(total_price, invoice);
+        actual_total_price = calc_total_price(invoice);
+        double actual_price_error = actual_total_price - total_price;
+        bool is_better = record_min_price_error(actual_price_error, invoice);
 
-        price_error = actual_total_price - total_price;
+        GoodsInvoice test_invoice(invoice);
+        for (size_t i = 0; i < test_invoice.count; i++) {
+            double price_adjust = round_price(-actual_price_error / test_invoice.prices[i]);
+            test_invoice.prices[i] += price_adjust;
+            actual_total_price = calc_total_price(test_invoice);
+            double price_error = actual_total_price - total_price;
+            is_better = record_min_price_error(price_error, test_invoice);
+            test_invoice = invoice;
+        }
+
         return result;
     }
 
@@ -391,8 +413,8 @@ private:
         }
 
         size_t search_cnt = 0;
-        double min_price_error = 9999.0;
-        double price_error = 9999.0;
+        double min_price_error = std::numeric_limits<double>::max();
+        double price_error = std::numeric_limits<double>::max();
 
         while (price_error != 0.0) {
             for (size_t i = 0; i < goods_count; i++) {
@@ -413,20 +435,44 @@ NEXT_GOODS_AMOUNT:
                 this->invoice_.amounts[idx] = normal_dist_random_i32(1, goods_amount_limit);
             }
 
-            int result = adjust_price_and_count(price_error, total_price, fluctuation, this->invoice_);
+            int result = adjust_price_and_count(total_price, fluctuation, this->invoice_);
             if (result == 0) {
-                if (price_error < min_price_error) {
-                    min_price_error = price_error;
-                    this->best_answer_ = this->invoice_;
-                }
+                //if (price_error < min_price_error) {
+                //    min_price_error = price_error;
+                //    this->best_answer_ = this->invoice_;
+                //}
             }
 
             search_cnt++;
+            if (abs(this->min_price_error_) <= 0.01) {
+                solvable = true;
+                break;
+            }
             if (search_cnt > 100000)
                 break;
         }
 
+        printf(" search_cnt = %u\n\n", (uint32_t)search_cnt);
+
         return solvable;
+    }
+
+    void display_best_answer() {
+        printf("--------------------------------------------------------------------\n");
+        printf(" The best price error:  %0.2f\n", this->min_price_error_);
+        printf("--------------------------------------------------------------------\n\n");
+        printf("   #        amount         price         money\n");
+        printf("--------------------------------------------------------------------\n\n");
+        for (size_t i = 0; i < this->best_answer_.count; i++) {
+            printf("  %2u     %8u       %8.2f       %8.2f\n",
+                   (uint32_t)(i + 1),
+                   (uint32_t)this->best_answer_.amounts[i],
+                   this->best_answer_.prices[i],
+                   this->best_answer_.moneys[i]);
+        }
+        printf("\n");
+        printf(" Total   %8u       %8.2f      %8.2f\n", (uint32_t)0, 0.0, calc_total_price(this->best_answer_));
+        printf("--------------------------------------------------------------------\n\n");
     }
 
 public:
@@ -436,11 +482,13 @@ public:
 
         bool solvable = search_price_and_count();
         if (solvable) {
-            //
+            printf(" Found a perfect answer.\n\n");
         }
         else {
-            //
+            printf(" Not found a perfect answer.\n\n");
         }
+
+        this->display_best_answer();
         return result;
     }
 };
@@ -461,5 +509,6 @@ int main(int argc, char * argv[])
     invoiceBalance.set_price_amount(3, goods_price, goods_amount);
 
     int result = invoiceBalance.solve();
+    ::system("pause");
     return result;
 }
