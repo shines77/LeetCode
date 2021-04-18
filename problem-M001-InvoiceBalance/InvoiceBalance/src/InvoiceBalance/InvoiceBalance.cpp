@@ -444,11 +444,11 @@ NEXT_GOODS_AMOUNT:
             }
 
             search_cnt++;
-            if (abs(this->min_price_error_) <= 0.01) {
+            if (abs(this->min_price_error_) <= 0.0000001) {
                 solvable = true;
                 break;
             }
-            if (search_cnt > 100000)
+            if (search_cnt > 1000000)
                 break;
         }
 
@@ -461,18 +461,21 @@ NEXT_GOODS_AMOUNT:
         printf("--------------------------------------------------------------------\n");
         printf(" The best price error:  %0.2f\n", this->min_price_error_);
         printf("--------------------------------------------------------------------\n\n");
-        printf("   #        amount         price         money\n");
+        printf("   #        amount         price           money\n");
         printf("--------------------------------------------------------------------\n\n");
+        double actual_total_price = calc_total_price(this->best_answer_);
         for (size_t i = 0; i < this->best_answer_.count; i++) {
-            printf("  %2u     %8u       %8.2f       %8.2f\n",
+            printf("  %2u     %8u       %8.2f       %10.2f\n",
                    (uint32_t)(i + 1),
                    (uint32_t)this->best_answer_.amounts[i],
                    this->best_answer_.prices[i],
                    this->best_answer_.moneys[i]);
         }
         printf("\n");
-        printf(" Total   %8u       %8.2f      %8.2f\n", (uint32_t)0, 0.0, calc_total_price(this->best_answer_));
-        printf("--------------------------------------------------------------------\n\n");
+        printf(" Total                                 %10.2f\n", actual_total_price);
+        printf("--------------------------------------------------------------------\n");
+        printf(" Error                                 %10.2f\n", (actual_total_price - this->total_price_));
+        printf("\n\n");
     }
 
 public:
