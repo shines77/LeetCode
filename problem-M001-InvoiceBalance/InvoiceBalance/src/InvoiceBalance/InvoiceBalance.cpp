@@ -631,7 +631,7 @@ NEXT_GOODS_AMOUNT:
         printf(" Error                                 %10.2f\n", (actual_total_price - this->total_price_));
         printf("\n\n");
         printf("---------------------------------------------------------------\n");
-        printf(" The best price error:  %0.2f\n", this->min_price_error_);
+        printf(" The best price error:  %0.16f\n", this->min_price_error_);
         printf("---------------------------------------------------------------\n\n");
     }
 
