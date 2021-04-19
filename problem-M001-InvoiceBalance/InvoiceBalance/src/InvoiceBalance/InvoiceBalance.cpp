@@ -508,8 +508,8 @@ private:
         return is_better;
     }
 
-    int adjust_price_and_count(double total_price, double fluctuation,
-                               GoodsInvoice & invoice) {
+    int adjust_price_and_amount(double total_price, double fluctuation,
+                                GoodsInvoice & invoice) {
         int result = 0;
         size_t padding_idx = find_padding_idx(invoice.count, invoice.amounts);
         if (padding_idx == size_t(-1)) {
@@ -541,7 +541,7 @@ private:
         return result;
     }
 
-    bool search_price_and_count() {
+    bool search_price_and_amount() {
         bool solvable = false;
 
         double total_price = this->total_price_;
@@ -576,7 +576,7 @@ private:
                 this->invoice_.amounts[idx] = normal_dist_random_i32(1, goods_amount_limit);
             }
 
-            int result = adjust_price_and_count(total_price, fluctuation, this->invoice_);
+            int result = adjust_price_and_amount(total_price, fluctuation, this->invoice_);
             if (result == 0) {
                 //
             }
@@ -620,7 +620,7 @@ public:
     int solve() {
         this->normalize();
 
-        bool solvable = search_price_and_count();
+        bool solvable = search_price_and_amount();
         if (solvable) {
             printf(" Found a perfect answer.\n\n");
         }
