@@ -342,7 +342,7 @@ struct GoodsInvoice
 
     bool internal_copy(const GoodsInvoice & other) {
         bool success;
-        if (other.count != 0) {       
+        if (other.count != 0) {
             if (other.count != this->count || !this->auto_release) {
                 this->destroy();
                 success = this->create_new_invoice(other);

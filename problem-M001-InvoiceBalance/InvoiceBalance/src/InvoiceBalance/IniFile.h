@@ -197,4 +197,8 @@ public:
     }
 };
 
+#if defined(_MSC_VER)
 __declspec(selectany) std::string IniFile::empty_string;
+#else
+std::string IniFile::empty_string;
+#endif
