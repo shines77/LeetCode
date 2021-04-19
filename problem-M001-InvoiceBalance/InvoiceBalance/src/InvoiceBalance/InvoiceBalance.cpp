@@ -11,6 +11,32 @@
 
 #include "IniFile.h"
 
+#if !defined(_MSC_VER)
+
+#if defined(__amd64__) || defined(__x86_64__) \
+ || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64)
+  #define _UNALIGNED __unaligned
+#else
+  #define _UNALIGNED
+#endif // __amd64__, __x86_64__, _M_X64, _M_ARM
+
+/* _countof helper */
+#if !defined(_countof)
+  #if !defined(__cplusplus)
+    #define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
+  #else // !defined (__cplusplus)
+    extern "C++"
+    {
+        template <typename _CountofType, size_t _SizeOfArray>
+        char (* __countof_helper(_UNALIGNED _CountofType(&_Array)[_SizeOfArray]))[_SizeOfArray];
+
+        #define _countof(_Array) (sizeof(*__countof_helper(_Array)) + 0)
+    }
+  #endif // !defined(__cplusplus)
+#endif // !defined(_countof)
+
+#endif // !_MSC_VER
+
 static const double kDefaultTotalPrice = 120000.0;
 static const double kDefaultFluctuation = 2.0;
 
@@ -763,6 +789,8 @@ int main(int argc, char * argv[])
 
     int result = invoiceBalance.solve();
     app_finalize();
+#if defined(_MSC_VER)
     ::system("pause");
+#endif
     return result;
 }
