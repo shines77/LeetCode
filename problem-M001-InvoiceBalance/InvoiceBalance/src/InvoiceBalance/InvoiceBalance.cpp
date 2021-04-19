@@ -475,6 +475,16 @@ private:
                      (this->invoice_.prices[idx] + this->fluctuation_));
     }
 
+    void shuffle_goods_order(size_t goods_count, size_t goods_order[]) {
+        for (ptrdiff_t i = goods_count - 1; i >= 1; i--) {
+            ptrdiff_t idx = (ptrdiff_t)next_random_i64(0, i);
+            assert(idx >= 0 && idx < (ptrdiff_t)goods_count);
+            if (idx != i) {
+                std::swap(goods_order[i], goods_order[idx]);
+            }
+        }
+    }
+
     size_t find_padding_idx(size_t goods_count, size_t goods_amount[]) {
         size_t count = 0;
         size_t padding_idx = size_t(-1);
@@ -541,6 +551,9 @@ private:
         size_t search_cnt = 0;
         double price_error = std::numeric_limits<double>::max();
         double min_price_error = std::numeric_limits<double>::max();
+        size_t * goods_order = new size_t[goods_count];
+        if (goods_order == nullptr)
+            return false;
 
         while (price_error != 0.0) {
             for (size_t i = 0; i < goods_count; i++) {
@@ -550,13 +563,15 @@ private:
 
             for (size_t i = 0; i < goods_count; i++) {
                 this->invoice_.amounts[i] = 0;
+                goods_order[i] = i;
             }
-            for (size_t i = 0; i < goods_count - 1; i++) {
-NEXT_GOODS_AMOUNT:
-                size_t idx = (size_t)next_random_i64(0, goods_count - 1);
-                if (this->invoice_.amounts[idx] != 0.0) {
-                    goto NEXT_GOODS_AMOUNT;
-                }
+
+            // shuffle goods_order[]
+            shuffle_goods_order(goods_count, goods_order);
+            
+            for (ptrdiff_t i = goods_count - 1; i >= 1; i--) {
+                size_t idx = goods_order[i];
+                assert(this->invoice_.amounts[idx] == 0.0);
                 int goods_amount_limit = recalc_max_goods_amount(idx);
                 this->invoice_.amounts[idx] = normal_dist_random_i32(1, goods_amount_limit);
             }
