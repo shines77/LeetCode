@@ -5,8 +5,28 @@
 #include <stddef.h>
 #include <math.h>
 #include <time.h>
+#include <assert.h>
 
 #include <limits>
+
+#include "IniFile.h"
+
+static const double kDefaultTotalPrice = 120000.0;
+static const double kDefaultFluctuation = 2.0;
+
+static const size_t kMaxPriceCount = 10;
+
+static double default_goods_price[] = {
+    212.00,
+    172.5,
+    226.0
+};
+
+static double s_total_price = kDefaultTotalPrice;
+static double s_fluctuation = kDefaultFluctuation;
+
+static double * s_goods_prices = nullptr;
+static size_t s_goods_price_count = 0;
 
 struct RoundingType {
     enum {
@@ -30,26 +50,26 @@ uint32_t next_random32()
 //
 double next_random_box_muller(double mu, double sigma)
 {
-	const double epsilon = std::numeric_limits<double>::min();
-	const double two_pi = 2.0 * 3.14159265358979323846;
+    const double epsilon = std::numeric_limits<double>::min();
+    const double two_pi = 2.0 * 3.14159265358979323846;
 
-	static double z0, z1;
-	static bool generate;
-	generate = !generate;
+    static double z0, z1;
+    static bool generate;
+    generate = !generate;
 
-	if (!generate) {
-	   return (z1 * sigma + mu);
+    if (!generate) {
+        return (z1 * sigma + mu);
     }
 
-	double u1, u2;
-	do {
-	   u1 = rand() * (1.0 / RAND_MAX);
-	   u2 = rand() * (1.0 / RAND_MAX);
-	} while (u1 <= epsilon);
+    double u1, u2;
+    do {
+        u1 = rand() * (1.0 / RAND_MAX);
+        u2 = rand() * (1.0 / RAND_MAX);
+    } while (u1 <= epsilon);
 
-	z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
-	z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
-	return (z0 * sigma + mu);
+    z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
+    z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
+    return (z0 * sigma + mu);
 }
 
 int32_t next_random_i32(int32_t min_num, int32_t max_num)
@@ -147,16 +167,28 @@ struct GoodsInvoice
                      amounts(nullptr), moneys(nullptr) {
     }
 
-    GoodsInvoice(const GoodsInvoice & other) {
-        this->copy(other);
+    GoodsInvoice(size_t goods_count, double goods_price[],
+                 size_t goods_amount[] = nullptr, double goods_money[] = nullptr)
+        : auto_release(false), count(goods_count), prices(goods_price),
+          amounts(goods_amount), moneys(goods_money) {
+    }
+
+    GoodsInvoice(const GoodsInvoice & other)
+        : auto_release(false), count(0), prices(nullptr),
+          amounts(nullptr), moneys(nullptr) {
+        this->construct_copy(other);
     }
 
     ~GoodsInvoice() {
         this->destroy();
     }
 
+    size_t size() const {
+        return this->count;
+    }
+
     void destroy() {
-        if (auto_release) {
+        if (this->auto_release) {
             if (this->prices) {
                 delete[] this->prices;
                 this->prices = nullptr;
@@ -173,64 +205,78 @@ struct GoodsInvoice
     }
 
     GoodsInvoice & operator = (const GoodsInvoice & rhs) {
-        if (&rhs != this) {
-            this->destroy();
-            this->copy(rhs);
-        }
+        this->copy(rhs);
         return *this;
     }
 
-    void copy(const GoodsInvoice & invoice) {
-        if (!invoice.auto_release) {
-            this->auto_release  = invoice.auto_release;
-            this->count         = invoice.count;
-            this->prices        = invoice.prices;
-            this->amounts       = invoice.amounts;
-            this->moneys        = invoice.moneys;
-        }
-        else {
-            this->clone(invoice.count, invoice.prices, invoice.amounts, invoice.moneys);
+    void attach(const GoodsInvoice & other) {
+        if (&other != this) {
+            this->destroy();
+
+            this->auto_release  = false;
+            this->count         = other.count;
+            this->prices        = other.prices;
+            this->amounts       = other.amounts;
+            this->moneys        = other.moneys;
         }
     }
 
-    bool clone(size_t goods_count, double goods_price[],
-               size_t goods_amount[], double goods_money[] = nullptr) {
-        auto_release = true;
+    bool create_new_invoice(const GoodsInvoice & other) {
+        assert(other.count != 0);
+        size_t goods_count = other.count;
+        this->auto_release = true;
         this->count = goods_count;
 
+        // price
         double * new_goods_price = new double[goods_count];
         if (new_goods_price == nullptr) {
             return false;
         }
 
-        for (size_t i = 0; i < goods_count; i++) {
-            new_goods_price[i] = goods_price[i];
+        if (other.prices != nullptr) {
+            for (size_t i = 0; i < goods_count; i++) {
+                new_goods_price[i] = other.prices[i];
+            }
+        }
+        else {
+            for (size_t i = 0; i < goods_count; i++) {
+                new_goods_price[i] = 0.0;
+            }
         }
         this->prices = new_goods_price;
 
+        // amount
         size_t * new_goods_amount = new size_t[goods_count];
         if (new_goods_amount == nullptr) {
             return false;
         }
 
-        for (size_t i = 0; i < goods_count; i++) {
-            new_goods_amount[i] = goods_amount[i];
+        if (other.amounts == nullptr) {
+            for (size_t i = 0; i < goods_count; i++) {
+                new_goods_amount[i] = 0;
+            }
+        }
+        else {
+            for (size_t i = 0; i < goods_count; i++) {
+                new_goods_amount[i] = other.amounts[i];
+            }
         }
         this->amounts = new_goods_amount;
 
+        // money
         double * new_goods_money = new double[goods_count];
         if (new_goods_money == nullptr) {
             return false;
         }
 
-        if (goods_money == nullptr) {
+        if (other.moneys == nullptr) {
             for (size_t i = 0; i < goods_count; i++) {
                 new_goods_money[i] = 0.0;
             }
         }
         else {
             for (size_t i = 0; i < goods_count; i++) {
-                new_goods_money[i] = goods_money[i];
+                new_goods_money[i] = other.moneys[i];
             }
         }
         this->moneys = new_goods_money;
@@ -238,8 +284,108 @@ struct GoodsInvoice
         return true;
     }
 
+    bool copy_invoice(const GoodsInvoice & other) {
+        assert(other.count != 0);
+        assert(this->count == other.count);
+        size_t goods_count = other.count;
+        assert(this->auto_release);
+        this->auto_release = true;
+        this->count = goods_count;
+
+        // price
+        if (other.prices != nullptr) {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->prices[i] = other.prices[i];
+            }
+        }
+        else {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->prices[i] = 0.0;
+            }
+        }
+
+        // amount
+        if (other.amounts == nullptr) {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->amounts[i] = 0;
+            }
+        }
+        else {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->amounts[i] = other.amounts[i];
+            }
+        }
+
+        // money
+        if (other.moneys == nullptr) {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->moneys[i] = 0.0;
+            }
+        }
+        else {
+            for (size_t i = 0; i < goods_count; i++) {
+                this->moneys[i] = other.moneys[i];
+            }
+        }
+
+        return true;
+    }
+
+    bool construct_copy(const GoodsInvoice & other) {
+        bool success;
+        if (other.count != 0)
+            success = this->create_new_invoice(other);
+        else
+            success = false;
+        return success;
+    }
+
+    bool internal_copy(const GoodsInvoice & other) {
+        bool success;
+        if (other.count != 0) {       
+            if (other.count != this->count || !this->auto_release) {
+                this->destroy();
+                success = this->create_new_invoice(other);
+            }
+            else {
+                success = this->copy_invoice(other);
+            }
+        }
+        else {
+            this->destroy();
+            success = true;
+        }
+        return success;
+    }
+
+    bool copy(const GoodsInvoice & other) {
+        if (&other != this) {
+            return this->internal_copy(other);
+        }
+
+        return false;
+    }
+
+    bool clone(const GoodsInvoice & other) {
+        if (&other != this) {
+            if (other.auto_release) {
+                assert(other.auto_release);
+                return this->internal_copy(other);
+            }
+            else {
+                assert(!other.auto_release);
+                this->auto_release  = other.auto_release;
+                this->count         = other.count;
+                this->prices        = other.prices;
+                this->amounts       = other.amounts;
+                this->moneys        = other.moneys;
+                return true;
+            }
+        }
+    }
+
     void set_price_amount(size_t goods_count, double goods_price[],
-                          size_t goods_amount[], double goods_money[] = nullptr) {
+                          size_t goods_amount[] = nullptr, double goods_money[] = nullptr) {
         this->destroy();
 
         this->auto_release  = false;
@@ -249,10 +395,10 @@ struct GoodsInvoice
         this->moneys        = goods_money;
     }
 
-    bool create_price_amount(size_t goods_count, double goods_price[],
-                             size_t goods_amount[], double goods_money[] = nullptr) {
+    bool create_price_amount(const GoodsInvoice & invoice) {
         this->destroy();
-        bool result = this->clone(goods_count, goods_price, goods_amount, goods_money);
+
+        bool result = this->copy(invoice);
         return result;
     }
 };
@@ -271,6 +417,11 @@ private:
     GoodsInvoice    best_answer_;
 
 public:
+    InvoiceBalance()
+        : total_price_(0.0), fluctuation_(0.0),
+          min_price_error_(std::numeric_limits<double>::max()), goods_count_(0) {
+    }
+
     InvoiceBalance(double total_price, double fluctuation)
         : total_price_(total_price), fluctuation_(fluctuation),
           min_price_error_(std::numeric_limits<double>::max()), goods_count_(0) {
@@ -279,10 +430,15 @@ public:
     virtual ~InvoiceBalance() {
     }
 
-    bool set_price_amount(size_t goods_count, double goods_price[], size_t goods_amount[]) {
+    void set_total_price(double total_price, double fluctuation) {
+        this->total_price_ = total_price;
+        this->fluctuation_ = fluctuation;
+    }
+
+    bool set_price_amount(size_t goods_count, double goods_price[]) {
         this->goods_count_ = goods_count;
-        this->in_invoice_.set_price_amount(goods_count, goods_price, goods_amount);
-        bool result = this->invoice_.create_price_amount(goods_count, goods_price, goods_amount);
+        this->in_invoice_.set_price_amount(goods_count, goods_price);
+        bool result = this->invoice_.copy(this->in_invoice_);
         return result;
     }
 
@@ -458,11 +614,9 @@ NEXT_GOODS_AMOUNT:
     }
 
     void display_best_answer() {
-        printf("--------------------------------------------------------------------\n");
-        printf(" The best price error:  %0.2f\n", this->min_price_error_);
-        printf("--------------------------------------------------------------------\n\n");
+        printf("\n");
         printf("   #        amount         price           money\n");
-        printf("--------------------------------------------------------------------\n\n");
+        printf("---------------------------------------------------------------\n\n");
         double actual_total_price = calc_total_price(this->best_answer_);
         for (size_t i = 0; i < this->best_answer_.count; i++) {
             printf("  %2u     %8u       %8.2f       %10.2f\n",
@@ -473,9 +627,12 @@ NEXT_GOODS_AMOUNT:
         }
         printf("\n");
         printf(" Total                                 %10.2f\n", actual_total_price);
-        printf("--------------------------------------------------------------------\n");
+        printf("---------------------------------------------------------------\n");
         printf(" Error                                 %10.2f\n", (actual_total_price - this->total_price_));
         printf("\n\n");
+        printf("---------------------------------------------------------------\n");
+        printf(" The best price error:  %0.2f\n", this->min_price_error_);
+        printf("---------------------------------------------------------------\n\n");
     }
 
 public:
@@ -496,22 +653,116 @@ public:
     }
 };
 
+double strToDouble(const std::string & value, double default_value)
+{
+    if (value.empty() || value.c_str() == nullptr || value == "")
+        return default_value;
+    else
+        return std::atof(value.c_str());
+}
+
+size_t read_config_value(IniFile & config)
+{
+    std::string value;
+
+    // TotalPrice
+    if (config.contains("TotalPrice")) {
+        value = config.values("TotalPrice");
+        s_total_price = strToDouble(value, kDefaultTotalPrice);
+    }
+    else {
+        s_total_price = kDefaultTotalPrice;
+    }
+
+    // Fluctuation
+    if (config.contains("Fluctuation")) {
+        value = config.values("Fluctuation");
+        s_fluctuation = strToDouble(value, kDefaultFluctuation);
+    }
+    else {
+        s_fluctuation = kDefaultFluctuation;
+    }
+
+    if (s_goods_prices != nullptr) {
+        delete [] s_goods_prices;
+    }
+
+    s_goods_price_count = 0;
+    s_goods_prices = new double[kMaxPriceCount];
+    if (s_goods_prices == nullptr)
+        return size_t(-1);
+
+    for (size_t i = 0; i < kMaxPriceCount; i++) {
+        s_goods_prices[i] = 0.0;
+    }
+
+    // Price list
+    size_t price_count = 0;
+    for (size_t i = 0; i < kMaxPriceCount; i++) {
+        std::string price_name = "Price";
+        size_t index = i + 1;
+        if (index < 10) {
+            price_name.push_back((char)index + '0');
+        }
+        else {
+            price_name.push_back((char)(index / 10) + '0');
+            price_name.push_back((char)(index % 10) + '0');
+        }
+
+        // Price ##
+        if (config.contains(price_name)) {
+            value = config.values(price_name);
+            double goods_price = strToDouble(value, 0.0);
+            if (goods_price != 0.0 && goods_price != NAN) {
+                if (price_count < kMaxPriceCount) {
+                    s_goods_prices[price_count] = round_price(goods_price);
+                }
+                price_count++;
+            }
+        }
+    }
+
+    s_goods_price_count = price_count;
+    return price_count;
+}
+
+void app_finalize()
+{
+    if (s_goods_prices != nullptr) {
+        delete [] s_goods_prices;
+        s_goods_prices = nullptr;
+    }
+}
+
 int main(int argc, char * argv[])
 {
     ::srand((unsigned int)::time(NULL));
+    printf("\n");
 
-    double goods_price[3] = {
-        212.00,
-        172.5,
-        226.0
-    };
+    size_t nPriceCount = size_t(-1);
 
-    size_t goods_amount[3] = { 0 };
+    IniFile iniFile;
+    int nReadStatus = iniFile.open("Invoice.txt");
+    printf(" IniFile('Invoice.txt'): nReadStatus = %d\n\n", nReadStatus);
+    if (nReadStatus == 0) {
+        int nParseCount = iniFile.parse();
+        if (nParseCount > 0) {
+            nPriceCount = read_config_value(iniFile);
+        }
+    }
 
-    InvoiceBalance invoiceBalance(120000.0, 2.0);
-    invoiceBalance.set_price_amount(3, goods_price, goods_amount);
+    InvoiceBalance invoiceBalance;
+    if (nPriceCount != size_t(-1)) {
+        invoiceBalance.set_total_price(s_total_price, s_fluctuation);
+        invoiceBalance.set_price_amount(s_goods_price_count, s_goods_prices);
+    }
+    else {
+        invoiceBalance.set_total_price(kDefaultTotalPrice, kDefaultFluctuation);
+        invoiceBalance.set_price_amount(_countof(default_goods_price), default_goods_price);
+    }
 
     int result = invoiceBalance.solve();
+    app_finalize();
     ::system("pause");
     return result;
 }

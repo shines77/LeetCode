@@ -21,6 +21,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\InvoiceBalance\InvoiceBalance.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\InvoiceBalance\IniFile.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{283F278E-E085-477A-9025-86D014009A61}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
