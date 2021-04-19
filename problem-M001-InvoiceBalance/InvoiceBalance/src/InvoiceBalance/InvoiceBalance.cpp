@@ -17,7 +17,7 @@
   #define _UNALIGNED __unaligned
 #else
   #define _UNALIGNED
-#endif // __amd64__, __x86_64__, _M_X64, _M_ARM
+#endif // _M_X64, _M_ARM
 
 /* _countof helper */
 #if !defined(_countof)
@@ -557,7 +557,7 @@ private:
 
         actual_total_price = calc_total_price(invoice);
         double actual_price_error = actual_total_price - total_price;
-        bool is_better = record_min_price_error(actual_price_error, invoice);
+        record_min_price_error(actual_price_error, invoice);
 
         GoodsInvoice test_invoice(invoice);
         for (size_t i = 0; i < test_invoice.count; i++) {
@@ -565,7 +565,7 @@ private:
             test_invoice.prices[i] += price_adjust;
             actual_total_price = calc_total_price(test_invoice);
             double price_error = actual_total_price - total_price;
-            is_better = record_min_price_error(price_error, test_invoice);
+            record_min_price_error(price_error, test_invoice);
             test_invoice = invoice;
         }
 
