@@ -583,7 +583,7 @@ private:
             }
             for (size_t i = 0; i < goods_count - 1; i++) {
 NEXT_GOODS_AMOUNT:
-                size_t idx = next_random_i64(0, goods_count - 1);
+                size_t idx = (size_t)next_random_i64(0, goods_count - 1);
                 if (this->invoice_.amounts[idx] != 0.0) {
                     goto NEXT_GOODS_AMOUNT;
                 }
