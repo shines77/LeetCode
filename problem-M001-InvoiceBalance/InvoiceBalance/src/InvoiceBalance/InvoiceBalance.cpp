@@ -13,8 +13,7 @@
 
 #if !defined(_MSC_VER)
 
-#if defined(__amd64__) || defined(__x86_64__) \
- || defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64)
+#if defined(_M_X64) || defined(_M_AMD64) || defined(_M_IA64)
   #define _UNALIGNED __unaligned
 #else
   #define _UNALIGNED
